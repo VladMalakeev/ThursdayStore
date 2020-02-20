@@ -1,10 +1,11 @@
 {
   "name": "ThursdayStore",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "e-commerce project",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "development": "set NODE_ENV=development&& node ./bin/www",
+    "production": "NODE_ENV=production node ./bin/www"
   },
   "repository": {
     "type": "git",
@@ -18,7 +19,17 @@
   },
   "homepage": "https://github.com/VladMalakeev/ThursdayStore#readme",
   "dependencies": {
+    "config": "^3.2.5",
+    "cookie-parser": "^1.4.4",
+    "debug": "^4.1.1",
     "express": "^4.17.1",
-    "pg": "^7.18.2"
+    "http-errors": "^1.7.3",
+    "morgan": "^1.9.1",
+    "multer": "^1.4.2",
+    "path": "^0.12.7",
+    "pg": "^7.18.2",
+    "pg-hstore": "^2.3.3",
+    "pug": "^2.0.4",
+    "sequelize": "^5.21.5"
   }
 }
