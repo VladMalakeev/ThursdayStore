@@ -4,8 +4,7 @@
   "description": "e-commerce project",
   "private": true,
   "scripts": {
-    "development": "set NODE_ENV=development&& node ./bin/www",
-    "production": "NODE_ENV=production node ./bin/www"
+    "start": "node ./bin/www"
   },
   "repository": {
     "type": "git",
