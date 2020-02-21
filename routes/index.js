@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-    res.render('index');
+const userRouter = require('./userRouter');
+
+router.use("/user", userRouter);
+
+router.use(async function (req, res) {
+    res.send(
+        JSON.stringify(req.data)
+    );
 });
 
 module.exports = router;
