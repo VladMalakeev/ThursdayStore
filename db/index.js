@@ -20,8 +20,4 @@ const connectToDataBase =  () => {
 };
 const db = connectToDataBase();
 
-db.sync({
-    alter: true
-});
-
 module.exports = db;

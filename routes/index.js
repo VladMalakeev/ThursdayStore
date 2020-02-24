@@ -1,14 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const userRouter = require('./userRouter');
+const languageRouter = require('./languageRouter');
 
-router.use("/user", userRouter);
+router.use("/languages", languageRouter);
 
 router.use(async function (req, res) {
-    res.send(
-        JSON.stringify(req.data)
-    );
+    res.setHeader("Content-Type", "application/json");
+    res.json(req.data);
 });
 
 module.exports = router;
