@@ -1,10 +1,14 @@
-const {DataTypes} = require('sequelize');
 const stringModel = require('../db/models/strings');
 const db = require('../db/index');
-const queryInterface = db.getQueryInterface();
+const enums = require('../utils/enums');
 
-const addString = async (stringObject) => {
-    return stringModel.create(stringObject, {returning: true});
+const addString = async (stringObject, transaction) => {
+    let langList = Object.keys(stringObject);
+    langList.forEach(lang => {
+        if(!enums.languages.includes(lang))  throw 'Wrong language key.';
+    });
+
+   return stringModel.create(stringObject, {transaction});
 } ;
 
 const editString = async (stringObject, id) => {
@@ -15,17 +19,7 @@ const deleteString = async (id) => {
     return stringModel.destroy({where:{id:id}});
 } ;
 
-const addColumn = async (name, transaction) => {
-    return queryInterface.addColumn('strings', name, {type: DataTypes.STRING, unique:true}, {transaction});
-};
-
-const removeColumn = async (name, transaction) => {
-    return queryInterface.removeColumn('strings', name, {transaction});
-};
-
 module.exports = {
-    addColumn,
-    removeColumn,
     addString,
     editString,
     deleteString
