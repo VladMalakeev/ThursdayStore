@@ -4,7 +4,8 @@ const connectToDataBase =  () => {
     const dev = () => new Sequelize('thursday', 'postgres', 'vlad2020',
             {
                 host: 'localhost',
-                dialect: 'postgres'
+                dialect: 'postgres',
+                logging: false
             },
         );
 

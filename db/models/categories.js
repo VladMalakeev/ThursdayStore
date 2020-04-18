@@ -20,8 +20,11 @@ const Categories = db.define("categories",{
     }
 },{timestamps:false});
 
-Categories.belongsTo(Strings,{as:'strings', foreignKey:'nameId'});
-Categories.belongsTo(Images,{as:'images', foreignKey:'imageId'});
+Strings.hasOne(Categories,{foreignKey:'nameId'});
+Images.hasOne(Categories, {foreignKey:'imageId'});
+Categories.belongsTo(Strings,{as:'name'});
+Categories.belongsTo(Images,{as:'image'});
+
 Categories.sync({alter:true});
 
 module.exports = Categories;

@@ -1,17 +1,17 @@
 const db = require('../db/index');
 const categoryModel = require('../db/models/categories');
-const stringsService = require('../services/StringServise');
+const stringsService = require('../services/stringServise');
 const imagesService = require('../services/imagesService');
 const languageService = require('../services/languageServise');
 const constants = require('../utils/Constants');
+const functions = require('../utils/functions');
 
 const addCategory = async (body, file) => {
     return db.transaction()
         .then(async transaction => {
-            try {JSON.parse(body.name)}
-            catch (e) {throw 'Wrong name object';}
+            if(!body.name) throw functions.badRequest('Name is required');
 
-            let string = await stringsService.addString(JSON.parse(body.name), transaction);
+            let string = await stringsService.addString(body.name, transaction);
             let image = await imagesService.addImage(file.filename, transaction);
             return categoryModel.create({nameId:string.id, imageId:image.id}, {transaction, returning:true})
                 .then(async category => {
@@ -19,63 +19,130 @@ const addCategory = async (body, file) => {
                     return getCategories(category.id, 'eng', true);
                 }).catch(error => {
                     console.log(error);
-                    throw 'An error occurred, try again later.';
+                    throw error;
                 })
             })
         .catch(error => {
             throw error
         })
-
 };
 
 const getCategories = async (id, lang = constants.DefaultLanguage, admin) => {
-    if(! await languageService.checkLanguageByKey(lang)) throw 'Wrong language key.';
+    if(! await languageService.checkLanguageByKey(lang)) throw functions.badRequest('Wrong language key');
     if(id){
-        if(!parseInt(id)) throw 'Invalid category id.';
+        if(!parseInt(id)) throw functions.badRequest('Invalid category id');
         return categoryModel.findOne(
             {
                 where:{id:id},
                 attributes:['id'],
-                include:[{association:'strings', attributes:{exclude:['id']}}, {association:'images'}]
+                include:[{association:'name', attributes:{exclude:['id']}}, {association:'image'}]
             })
             .then(category => {
                 return {
                     id:category.id,
-                    name:admin ? category.strings : category.strings[lang],
-                    image:category.images.name
+                    name:admin ? category.name : category.name[lang],
+                    image:category.image.name
                 }
             })
             .catch(error => {
                 console.log(error);
-                throw 'An error occurred, try again later.';
+                throw error;
             })
     }else{
         return categoryModel.findAll({
             attributes:['id'],
             include:[
-                {association:'strings', attributes:{exclude:['id']}},
-                {association:'images', attributes:['name']}
+                {association:'name', attributes:{exclude:['id']}},
+                {association:'image', attributes:['name']}
                 ]
         }).then(categories => {
             let resultList = [];
             categories.forEach(category => {
                 resultList.push({
                     id:category.id,
-                    name: admin ? category.strings : category.strings[lang],
-                    image:category.images.name
+                    name: admin ? category.name : category.name[lang],
+                    image:category.image.name
                 })
             });
             return resultList;
         })
             .catch(error => {
                 console.log(error);
-                throw 'An error occurred, try again later.';
+                throw error;
             })
     }
 
 };
 
+const editCategory = async (id, image, name) => {
+    return categoryModel.findOne({where:{id:id}})
+        .then(category => {
+            if(!category) throw functions.badRequest('Wrong id');
+           return db.transaction()
+               .then(async transaction => {
+                let Obj = {};
+                let newString = await stringsService.editString(name, category.nameId, transaction);
+                Obj.nameId = newString.id;
+                if(image){
+                  let newImage = await imagesService.updateImage(category.imageId, image.filename, 'categories', transaction);
+                  Obj.imageId = newImage.id;
+                }
+               return category.update(Obj, {returning:true, transaction})
+                   .then(result => {
+                       transaction.commit();
+                       return getCategories(result.id, 'eng', true)
+                   })
+                   .catch(error => {
+                       transaction.rollback();
+                       throw error;
+                   })
+            }).catch(error => {
+                throw error;
+            });
+
+        })
+        .catch(error => {
+            console.log(error);
+            throw error;
+        })
+};
+
+const deleteCategory = async (id) => {
+    return categoryModel.findOne({where:{id}})
+        .then(category => {
+            if(!category) throw functions.badRequest('Wrong category id');
+            return  db.transaction()
+                .then(transaction => {
+                   return category.destroy()
+                       .then(async result => {
+                           await imagesService.deleteImage(category.imageId, 'categories', transaction);
+                           await stringsService.deleteString(category.nameId, transaction);
+                            transaction.commit();
+                            return true
+                        })
+                       .catch(error => {
+                           transaction.rollback();
+                           throw error;
+                       })
+                })
+                .catch(error => {
+                    throw error;
+                })
+
+        })
+        .catch(error => {
+            throw error
+        })
+};
+
+const isExistCategory = async (id) => {
+     return categoryModel.findOne({where:{id}})
+};
+
 module.exports = {
     addCategory,
-    getCategories
+    getCategories,
+    deleteCategory,
+    editCategory,
+    isExistCategory
 };
