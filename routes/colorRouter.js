@@ -1,14 +1,24 @@
 const express = require("express");
 const router = express.Router();
-const adminMiddleware = require('../middleware/adminMiddleware');
-const adminOptionalMiddleware = require('../middleware/adminOptionalMiddleware');
-const imageUpload = require('../services/imagesService').productUpload;
+const colorService = require("../services/colorService");
 const functions = require('../utils/functions');
-const productService = require('../services/productService');
-const constants = require('../utils/Constants');
+const adminMiddleware = require('../middleware/adminMiddleware');
 
-router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
-    productService.getProduct(req.params.id, req.query.catId, req.query.lang, req.admin)
+router.get("/", (req, res, next) => {
+    colorService.getColors()
+        .then(response => {
+            req.data = response;
+            next();
+        })
+        .catch(error => {
+            res.status(functions.errorStatus(error));
+            req.data = functions.errorInfo(error);
+            next();
+    })
+});
+
+router.post("/", adminMiddleware, (req, res, next) => {
+    colorService.addColor(req.body.key, req.body.value)
         .then(response => {
             req.data = response;
             next();
@@ -20,8 +30,8 @@ router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
         })
 });
 
-router.post('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimit), (req, res, next) => {
-    productService.addProduct(req.body, req.files)
+router.put("/", adminMiddleware, (req, res, next) => {
+    colorService.editColor(req.body.id, req.body.key, req.body.value)
         .then(response => {
             req.data = response;
             next();
@@ -33,26 +43,11 @@ router.post('/', adminMiddleware, imageUpload.array('image', constants.ImagesLim
         })
 });
 
-router.put('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimit), (req, res, next) => {
-    productService.editProduct(req.body, req.files)
+router.delete("/", adminMiddleware, (req, res, next) => {
+    colorService.deleteColor(req.body.id)
         .then(response => {
-            req.data = response;
+            req.data = "success";
             next();
-        })
-        .catch(error => {
-            res.status(functions.errorStatus(error));
-            req.data = functions.errorInfo(error);
-            next();
-        })
-});
-
-router.delete('/', adminMiddleware, (req, res, next) => {
-    productService.deleteProduct(req.body.id)
-        .then(response => {
-            if(response){
-                req.data = true;
-                next();
-            }else throw functions.badRequest('Wrong id');
         })
         .catch(error => {
             res.status(functions.errorStatus(error));

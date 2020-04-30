@@ -1,14 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const functions = require('../utils/functions');
 const adminMiddleware = require('../middleware/adminMiddleware');
 const adminOptionalMiddleware = require('../middleware/adminOptionalMiddleware');
-const imageUpload = require('../services/imagesService').productUpload;
-const functions = require('../utils/functions');
-const productService = require('../services/productService');
-const constants = require('../utils/Constants');
+const localeService = require('../services/localeService');
 
-router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
-    productService.getProduct(req.params.id, req.query.catId, req.query.lang, req.admin)
+router.get("/", adminOptionalMiddleware, (req, res, next) => {
+    localeService.getLocale(req.query.lang, req.admin)
         .then(response => {
             req.data = response;
             next();
@@ -20,8 +18,8 @@ router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
         })
 });
 
-router.post('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimit), (req, res, next) => {
-    productService.addProduct(req.body, req.files)
+router.post("/", adminMiddleware, (req, res, next) => {
+    localeService.addLocale(req.body.key, req.body.value)
         .then(response => {
             req.data = response;
             next();
@@ -33,8 +31,8 @@ router.post('/', adminMiddleware, imageUpload.array('image', constants.ImagesLim
         })
 });
 
-router.put('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimit), (req, res, next) => {
-    productService.editProduct(req.body, req.files)
+router.put("/", adminMiddleware, (req, res, next) => {
+    localeService.editLocale(req.body.id, req.body.key, req.body.value)
         .then(response => {
             req.data = response;
             next();
@@ -46,13 +44,11 @@ router.put('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimi
         })
 });
 
-router.delete('/', adminMiddleware, (req, res, next) => {
-    productService.deleteProduct(req.body.id)
+router.delete("/", adminMiddleware, (req, res, next) => {
+    localeService.deleteLocale(req.body.id)
         .then(response => {
-            if(response){
-                req.data = true;
-                next();
-            }else throw functions.badRequest('Wrong id');
+            req.data = "success";
+            next();
         })
         .catch(error => {
             res.status(functions.errorStatus(error));

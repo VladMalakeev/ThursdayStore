@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const languageService = require('../services/languageServise');
+const languageService = require('../services/languageService');
 
 router.get('/', (req, res, next) => {
     languageService.getAllLanguages()

@@ -1,8 +1,8 @@
 const db = require('../db/index');
 const categoryModel = require('../db/models/categories');
-const stringsService = require('../services/stringServise');
+const stringsService = require('../services/stringService');
 const imagesService = require('../services/imagesService');
-const languageService = require('../services/languageServise');
+const languageService = require('../services/languageService');
 const constants = require('../utils/Constants');
 const functions = require('../utils/functions');
 
