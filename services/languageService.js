@@ -1,6 +1,9 @@
 const languageModel = require('../db/models/languages');
+const functions = require('../utils/functions');
 
 const addLanguage = async (nameObject) => {
+    if(!nameObject.key) throw functions.badRequest('Key is required');
+    if(!nameObject.name) throw functions.badRequest('Name is required');
     return  languageModel.create(nameObject, {returning:true});
 };
 

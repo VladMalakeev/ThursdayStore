@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const languageService = require('../services/languageService');
+const adminMiddleware = require('../middleware/adminMiddleware');
 
 router.get('/', (req, res, next) => {
     languageService.getAllLanguages()
@@ -15,7 +16,7 @@ router.get('/', (req, res, next) => {
         })
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', adminMiddleware, (req, res, next) => {
     languageService.addLanguage(req.body)
         .then(language => {
             req.data = language;
@@ -28,7 +29,7 @@ router.post('/', (req, res, next) => {
         })
 });
 
-router.delete('/', (req, res, next) => {
+router.delete('/', adminMiddleware, (req, res, next) => {
     languageService.removeLanguage(req.body.id)
         .then(result => {
             req.data = true;
