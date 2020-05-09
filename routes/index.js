@@ -8,6 +8,8 @@ const imageRouter = require('./imageRouter');
 const productRouter = require('./productRouter');
 const colorRouter = require('./colorRouter');
 const localeRouter = require('./localeRouter');
+const propertiesRouter = require('./propertyRouter');
+const parametersRouter = require('./parametersRouter');
 
 router.use("/languages", languageRouter);
 router.use("/categories", categoryRouter);
@@ -16,6 +18,8 @@ router.use("/image", imageRouter);
 router.use("/products", productRouter);
 router.use("/colors", colorRouter);
 router.use("/locale", localeRouter);
+router.use("/properties", propertiesRouter);
+router.use("/parameters", parametersRouter);
 
 router.use(async function (req, res) {
     res.setHeader("Content-Type", "application/json");

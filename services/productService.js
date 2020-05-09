@@ -9,22 +9,37 @@ const productsImagesModel = require('../db/models/produscts_images');
 const constants = require('../utils/Constants');
 const functions = require('../utils/functions');
 
+const checkPrice = async (price) => {
+    if(!price) throw functions.badRequest('Price is required');
+    if(!parseFloat(price)){
+        throw functions.badRequest('Invalid price format');
+    }else {
+        let priceValue = parseFloat(price);
+        if(priceValue < 0)  throw functions.badRequest('Invalid price value');
+        else return priceValue;
+    }
+};
+
 const addProduct = async (body, files) => {
     return db.transaction()
         .then(async transaction => {
-            if (!body.name) throw functions.badRequest('Name is required');
-            if (!body.description) throw functions.badRequest('Description is required');
+            if(!body.name) throw functions.badRequest('Name is required');
+            if(!body.description) throw functions.badRequest('Description is required');
 
+            let name = JSON.parse(body.name);
+            let description = JSON.parse(body.description);
+
+            let price = await checkPrice(body.price);
             if (!await subCategoryService.isExistSubCategory(body.catId)) {
                 throw functions.badRequest('Wrong catId parameter or category not exist');
             }
 
-            return productModel.create({categoryId: body.catId}, {transaction})
+            return productModel.create({categoryId: body.catId, price:price}, {transaction})
                 .then(async product => {
-                    let name = await stringsService.addString(body.name, transaction);
-                    let description = await stringsService.addString(body.description, transaction);
-                    product.setName(name, {transaction});
-                    product.setDescription(description, {transaction});
+                    let newName = await stringsService.addString(name, transaction);
+                    let newDescription = await stringsService.addString(description, transaction);
+                    product.setName(newName, {transaction});
+                    product.setDescription(newDescription, {transaction});
 
                     if (files.length > 0) {
                         let gallery = await imageService.addGallery(files, transaction);
@@ -63,7 +78,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
             id: product.id,
             name: admin ? product.name : product.name[lang],
             description: admin ? product.description : product.description[lang],
-            images: product.images.map(image => image.name)
+            images: product.images.map(image => image.name),
+            price:product.price
         }
 
 
@@ -84,7 +100,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
                         id: product.id,
                         name: admin ? product.name : product.name[lang],
                         description: admin ? product.description : product.description[lang],
-                        images: product.images.map(image => image.name)
+                        images: product.images.map(image => image.name),
+                        price:product.price
                     }
                 })
             })
@@ -101,13 +118,16 @@ const editProduct = async (body, files) => {
         .then(transaction => {
             return productModel.findOne({where: {id: body.id}})
                 .then(async product => {
+                    let updateObj = {};
                     if (!product) throw functions.badRequest('Wrong product id');
                     if (body.name) {
-                        await stringsService.editString(body.name, product.nameId, transaction);
+                        let name = functions.parseString(body.name, 'name');
+                        await stringsService.editString(name, product.nameId, transaction);
                     }
 
                     if (body.description) {
-                        await stringsService.editString(body.description, product.descriptionId, transaction);
+                        let description = functions.parseString(body.description, 'description');
+                        await stringsService.editString(description, product.descriptionId, transaction);
                     }
 
                     if (body.catId) {
@@ -117,11 +137,16 @@ const editProduct = async (body, files) => {
                         if (!await subCategoryService.isExistSubCategory(body.catId)) {
                             throw functions.badRequest('Wrong catId parameter or category not exist');
                         }
-                        await product.update({categoryId: body.catId}, {transaction})
+                        updateObj.categoryId = body.catId;
+                    }
+
+                    if(body.price){
+                        updateObj.price = await checkPrice(body.price);
                     }
 
                     if (body.removeImages) {
-                        let images = await imageService.deleteGallery(body.removeImages,'products', transaction);
+                        let removeImages = functions.parseString(body.removeImages, 'removeImages');
+                        let images = await imageService.deleteGallery(removeImages,'products', transaction);
                         await productsImagesModel.destroy({where: {imageId: images.map(image => image.id)}, transaction});
                     }
 
@@ -137,7 +162,7 @@ const editProduct = async (body, files) => {
                             await productsImagesModel.bulkCreate(galleryObj, {transaction});
                         }
                     }
-
+                    await product.update(updateObj, {transaction});
                     transaction.commit();
                     return await getProduct(product.id, null, 'eng', true);
 

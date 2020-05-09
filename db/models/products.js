@@ -24,6 +24,12 @@ const Products = db.define("products",{
           model:SubCategories,
           key:'id'
       }
+    },
+    price:{
+        type:Sequelize.FLOAT,
+        validate:{
+            min:0
+        }
     }
 },{timestamps:false});
 

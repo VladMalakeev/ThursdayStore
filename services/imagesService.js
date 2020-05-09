@@ -76,16 +76,8 @@ const deleteImage = async (id, path, transaction) => {
 };
 
 const deleteGallery = async (images, path, transaction) => {
-    let obj = [];
-    try{
-        if(typeof images === 'string') {
-            obj = JSON.parse(images);
-        }else obj = images;
-    }catch (e) {
-        throw functions.badRequest('Wrong removeImages format')
-    }
-    let imagesList = await imageModel.findAll({where:{name:obj.map(image => image)}});
-    let result = await imageModel.destroy({where:{name:obj.map(image => image)}, returning:true, transaction});
+    let imagesList = await imageModel.findAll({where:{name:images.map(image => image)}});
+    let result = await imageModel.destroy({where:{name:images.map(image => image)}, returning:true, transaction});
         if(result) {
             imagesList.forEach(image => {
                 deleteImageFromFileSystem(path, image.name);

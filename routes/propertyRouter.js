@@ -1,13 +1,11 @@
-const express = require("express");
-const router = express.Router();
+const router = require('express').Router();
 const adminMiddleware = require('../middleware/adminMiddleware');
 const adminOptionalMiddleware = require('../middleware/adminOptionalMiddleware');
-const imageUpload = require('../services/imagesService').categoryUpload;
-const categoryService = require('../services/categoryService');
 const functions = require('../utils/functions');
+const propertyService = require('../services/propertyService');
 
-router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
-    categoryService.getCategories(req.params.id, req.query.lang, req.admin)
+router.get('/', adminOptionalMiddleware, (req, res, next) => {
+    propertyService.getProperties(req.query.lang, req.admin)
         .then(response => {
             req.data = response;
             next();
@@ -19,8 +17,8 @@ router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
         })
 });
 
-router.post('/', adminMiddleware, imageUpload.single('image'), (req, res, next) => {
-    categoryService.addCategory(req.body.name, req.file)
+router.post('/', adminMiddleware, (req, res, next) => {
+    propertyService.addProperties(req.body.properties)
         .then(response => {
             req.data = response;
             next();
@@ -32,8 +30,8 @@ router.post('/', adminMiddleware, imageUpload.single('image'), (req, res, next) 
         })
 });
 
-router.put('/', adminMiddleware, imageUpload.single('image'), (req, res, next) => {
-    categoryService.editCategory(req.body.id, req.file, req.body.name)
+router.put('/', adminMiddleware, (req, res, next) => {
+    propertyService.editProperty(req.body.name, req.body.id)
         .then(response => {
             req.data = response;
             next();
@@ -46,15 +44,10 @@ router.put('/', adminMiddleware, imageUpload.single('image'), (req, res, next) =
 });
 
 router.delete('/', adminMiddleware, (req, res, next) => {
-    categoryService.deleteCategory(req.body.id)
+    propertyService.deleteProperty(req.body.id)
         .then(response => {
-            if(response){
-                req.data = true;
-                next();
-            }else throw {
-                status:400,
-                info:'Wrong id'
-            }
+            req.data = response;
+            next();
         })
         .catch(error => {
             res.status(functions.errorStatus(error));
@@ -62,5 +55,6 @@ router.delete('/', adminMiddleware, (req, res, next) => {
             next();
         })
 });
+
 
 module.exports = router;

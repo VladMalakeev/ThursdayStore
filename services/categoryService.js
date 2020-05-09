@@ -6,12 +6,12 @@ const languageService = require('../services/languageService');
 const constants = require('../utils/Constants');
 const functions = require('../utils/functions');
 
-const addCategory = async (body, file) => {
+const addCategory = async (name, file) => {
     return db.transaction()
         .then(async transaction => {
-            if(!body.name) throw functions.badRequest('Name is required');
+            if(!name) throw functions.badRequest('Name is required');
 
-            let string = await stringsService.addString(body.name, transaction);
+            let string = await stringsService.addString(JSON.parse(name), transaction);
             let image = await imagesService.addImage(file.filename, transaction);
             return categoryModel.create({nameId:string.id, imageId:image.id}, {transaction, returning:true})
                 .then(async category => {
@@ -81,8 +81,10 @@ const editCategory = async (id, image, name) => {
            return db.transaction()
                .then(async transaction => {
                 let Obj = {};
-                let newString = await stringsService.editString(name, category.nameId, transaction);
-                Obj.nameId = newString.id;
+                if(name) {
+                    let newString = await stringsService.editString(JSON.parse(name), category.nameId, transaction);
+                    Obj.nameId = newString.id;
+                }
                 if(image){
                   let newImage = await imagesService.updateImage(category.imageId, image.filename, 'categories', transaction);
                   Obj.imageId = newImage.id;

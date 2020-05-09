@@ -20,7 +20,7 @@ router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
 });
 
 router.post('/', adminMiddleware, imageUpload.single('image'), (req, res, next) => {
-    subCategoryService.addSubCategory(req.body, req.file)
+    subCategoryService.addSubCategory(req.body.name, req.body.catId, req.file)
         .then(response => {
             req.data = response;
             next();

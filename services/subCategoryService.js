@@ -8,15 +8,15 @@ const constants = require('../utils/Constants');
 const functions = require('../utils/functions');
 const categoryService = require('./categoryService');
 
-const addSubCategory = async (body, file) => {
+const addSubCategory = async (name, catId,  file) => {
     return db.transaction()
         .then(async transaction => {
-            if(!body.name) throw functions.badRequest('Name is required');
-            if(!await categoryService.isExistCategory(body.catId)) functions.badRequest('Wrong catId parameter');
+            if(!name) throw functions.badRequest('Name is required');
+            if(!await categoryService.isExistCategory(catId)) functions.badRequest('Wrong catId parameter');
 
-            let string = await stringsService.addString(body.name, transaction);
+            let string = await stringsService.addString(JSON.parse(name), transaction);
             let image = await imagesService.addImage(file.filename, transaction);
-            return subCategoryModel.create({nameId:string.id, categoryId:body.catId, imageId:image.id}, {transaction, returning:true})
+            return subCategoryModel.create({nameId:string.id, categoryId:catId, imageId:image.id}, {transaction, returning:true})
                 .then(async subCategory => {
                     transaction.commit();
                     return getSubCategories(subCategory.id, null, 'eng', true);
@@ -85,8 +85,11 @@ const editSubCategory = async (id, catId, image, name) => {
             return db.transaction()
                 .then(async transaction => {
                     let Obj = {};
-                    let newString = await stringsService.editString(name, subCategory.nameId, transaction);
-                    Obj.nameId = newString.id;
+                    if(name) {
+                        let newString = await stringsService.editString(JSON.parse(name), subCategory.nameId, transaction);
+                        Obj.nameId = newString.id;
+                    }
+
                     if(image){
                         let newImage = await imagesService.updateImage(subCategory.imageId, image.filename, 'subcategories', transaction);
                         Obj.imageId = newImage.id;
