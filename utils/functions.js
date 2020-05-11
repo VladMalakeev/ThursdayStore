@@ -26,11 +26,13 @@ const isArray = (parameter, name) => {
 };
 
 const parseString = (string, name) => {
-  try {
-      return JSON.parse(string);
-  } catch (e) {
-      throw badRequest(`Wrong ${name} object!`)
-  }
+    if(typeof string === 'string') {
+        try {
+            return JSON.parse(string);
+        } catch (e) {
+            throw badRequest(`Wrong ${name} object!`)
+        }
+    }else return string;
 };
 
 module.exports = {

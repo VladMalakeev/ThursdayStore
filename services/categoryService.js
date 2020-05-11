@@ -10,10 +10,14 @@ const addCategory = async (name, file) => {
     return db.transaction()
         .then(async transaction => {
             if(!name) throw functions.badRequest('Name is required');
-
-            let string = await stringsService.addString(JSON.parse(name), transaction);
-            let image = await imagesService.addImage(file.filename, transaction);
-            return categoryModel.create({nameId:string.id, imageId:image.id}, {transaction, returning:true})
+            let catObj = {};
+            let string = await stringsService.addString(functions.parseString(name,'name'), transaction);
+            catObj.nameId = string.id;
+            if(file) {
+                let image = await imagesService.addImage(file.filename, transaction);
+                catObj.imageId = image.id;
+            }
+            return categoryModel.create(catObj, {transaction, returning:true})
                 .then(async category => {
                     transaction.commit();
                     return getCategories(category.id, 'eng', true);
@@ -41,7 +45,7 @@ const getCategories = async (id, lang = constants.DefaultLanguage, admin) => {
                 return {
                     id:category.id,
                     name:admin ? category.name : category.name[lang],
-                    image:category.image.name
+                    image:category.image ? category.image.name : null
                 }
             })
             .catch(error => {
@@ -82,7 +86,7 @@ const editCategory = async (id, image, name) => {
                .then(async transaction => {
                 let Obj = {};
                 if(name) {
-                    let newString = await stringsService.editString(JSON.parse(name), category.nameId, transaction);
+                    let newString = await stringsService.editString(functions.parseString(name,'name'), category.nameId, transaction);
                     Obj.nameId = newString.id;
                 }
                 if(image){

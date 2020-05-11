@@ -5,6 +5,7 @@ const parametersService = require('../services/parametersService');
 const functions = require('../utils/functions');
 const db = require('../db/index');
 const constants = require('../utils/Constants');
+const { Op } = require("sequelize");
 
 const addProperties = async (properties) => {
     functions.isArray(properties);
@@ -62,6 +63,14 @@ const getPropertyById = async (id) => {
   return property;
 };
 
+const getManyProperties = async (propertyList) => {
+    return propertyModel.findAll({where:{id:{[Op.in]:[propertyList]}}})
+        .catch(error => {
+            console.log(error);
+            throw 'Invalid property id!';
+        })
+};
+
 const editProperty = async (name, id) => {
     if(!name) throw functions.badRequest('Name is required!');
     if(!id) throw functions.badRequest('Id is required!');
@@ -98,6 +107,7 @@ module.exports = {
     getProperties,
     editProperty,
     deleteProperty,
-    getPropertyById
+    getPropertyById,
+    getManyProperties
 };
 

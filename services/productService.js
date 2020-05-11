@@ -1,10 +1,13 @@
 const db = require('../db/index');
 const languageService = require('../services/languageService');
 const stringsService = require('./stringService');
+const propertyService = require('./propertyService');
 const subCategoryService = require('./subCategoryService');
 const subCategoryModel = require('../db/models/subCategories');
 const imageService = require('./imagesService');
 const productModel = require('../db/models/products');
+const productPropertyModel = require('../db/models/products_properties');
+const propertyParametersModel = require('../db/models/properties_parameters');
 const productsImagesModel = require('../db/models/produscts_images');
 const constants = require('../utils/Constants');
 const functions = require('../utils/functions');
@@ -26,8 +29,8 @@ const addProduct = async (body, files) => {
             if(!body.name) throw functions.badRequest('Name is required');
             if(!body.description) throw functions.badRequest('Description is required');
 
-            let name = JSON.parse(body.name);
-            let description = JSON.parse(body.description);
+            let name = functions.parseString(body.name, 'name');
+            let description = functions.parseString(body.description, 'description');
 
             let price = await checkPrice(body.price);
             if (!await subCategoryService.isExistSubCategory(body.catId)) {
@@ -49,7 +52,11 @@ const addProduct = async (body, files) => {
                         await productsImagesModel.bulkCreate(galleryObj, {transaction});
                     }
 
-                    transaction.commit();
+                    await transaction.commit();
+
+                    if(body.properties){
+                        await setPropertiesForProduct(body.properties, product);
+                    }
                     return getProduct(product.id, null, 'eng', true);
                 })
                 .catch(error => {
@@ -60,6 +67,41 @@ const addProduct = async (body, files) => {
         .catch(error => {
             throw error
         })
+};
+
+const setPropertiesForProduct = async (properties, product) => {
+    let propertyArray = functions.parseString(properties,'properties');
+    let productsPropertiesIds = propertyArray.map(property => {
+        return {
+            propertyId:property.propertyId,
+            productId:product.id
+        }
+    });
+    let productPropertyResult = await productPropertyModel.bulkCreate(productsPropertiesIds, {returning:true})
+        .catch(error => {
+           console.log(error);
+           throw functions.badRequest('Wrong one or more property key')
+        });
+
+    let propertiesParameters = [];
+    productPropertyResult.forEach(productProperty => {
+        propertyArray.forEach(property => {
+            if(property.propertyId === productProperty.propertyId){
+                property.parameters.forEach(parameter => {
+                    propertiesParameters.push({
+                        parameterId:parameter.parameterId,
+                        propertyId:productProperty.propertyId,
+                        productsPropertyId:productProperty.id
+                    })
+                })
+            }
+        })
+    });
+
+    let propertyParametersResult = await propertyParametersModel.bulkCreate(propertiesParameters);
+    console.log(propertyParametersResult);
+
+    return true
 };
 
 const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) => {

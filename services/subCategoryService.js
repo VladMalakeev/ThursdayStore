@@ -13,10 +13,14 @@ const addSubCategory = async (name, catId,  file) => {
         .then(async transaction => {
             if(!name) throw functions.badRequest('Name is required');
             if(!await categoryService.isExistCategory(catId)) functions.badRequest('Wrong catId parameter');
-
-            let string = await stringsService.addString(JSON.parse(name), transaction);
-            let image = await imagesService.addImage(file.filename, transaction);
-            return subCategoryModel.create({nameId:string.id, categoryId:catId, imageId:image.id}, {transaction, returning:true})
+            let catObj = {categoryId:catId};
+            let string = await stringsService.addString(functions.parseString(name, 'name'), transaction);
+            catObj.nameId = string.id;
+            if(file) {
+                let image = await imagesService.addImage(file.filename, transaction);
+                catObj.imageId = image.id;
+            }
+            return subCategoryModel.create(catObj, {transaction, returning:true})
                 .then(async subCategory => {
                     transaction.commit();
                     return getSubCategories(subCategory.id, null, 'eng', true);
@@ -86,7 +90,7 @@ const editSubCategory = async (id, catId, image, name) => {
                 .then(async transaction => {
                     let Obj = {};
                     if(name) {
-                        let newString = await stringsService.editString(JSON.parse(name), subCategory.nameId, transaction);
+                        let newString = await stringsService.editString(functions.parseString(name, 'name'), subCategory.nameId, transaction);
                         Obj.nameId = newString.id;
                     }
 
