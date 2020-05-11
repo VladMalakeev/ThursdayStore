@@ -65,7 +65,7 @@ const getCategories = async (id, lang = constants.DefaultLanguage, admin) => {
                 resultList.push({
                     id:category.id,
                     name: admin ? category.name : category.name[lang],
-                    image:category.image.name
+                    image: category.image ? category.image.name: null
                 })
             });
             return resultList;

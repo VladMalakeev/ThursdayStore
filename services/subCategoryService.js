@@ -48,7 +48,7 @@ const getSubCategories = async (id, catId, lang = constants.DefaultLanguage, adm
                 return {
                     id:subCategory.id,
                     name:admin ? subCategory.name : subCategory.name[lang],
-                    image:subCategory.image.name
+                    image:subCategory.image ? subCategory.image.name: null
                 }
             })
             .catch(error => {
@@ -69,7 +69,7 @@ const getSubCategories = async (id, catId, lang = constants.DefaultLanguage, adm
                 resultList.push({
                     id:subCategory.id,
                     name: admin ? subCategory.name : subCategory.name[lang],
-                    image:subCategory.image.name
+                    image:subCategory.image ? subCategory.image.name: null
                 })
             });
             return resultList;
