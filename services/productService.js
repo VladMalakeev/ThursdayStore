@@ -41,8 +41,8 @@ const addProduct = async (body, files) => {
                 .then(async product => {
                     let newName = await stringsService.addString(name, transaction);
                     let newDescription = await stringsService.addString(description, transaction);
-                    product.setName(newName, {transaction});
-                    product.setDescription(newDescription, {transaction});
+                    await product.setName(newName, {transaction});
+                    await product.setDescription(newDescription, {transaction});
 
                     if (files.length > 0) {
                         let gallery = await imageService.addGallery(files, transaction);
