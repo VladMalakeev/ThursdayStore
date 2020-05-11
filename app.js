@@ -7,6 +7,8 @@ const dataBase = require('./db/index');
 const indexRouter = require('./routes/index');
 require('dotenv').config();
 const app = express();
+const morgan = require('morgan');
+const fs = require("fs");
 //view engine setup
 // app.set('views', path.join(__dirname, 'views'));
 // app.set('view engine', 'pug');
@@ -36,6 +38,33 @@ app.use(function(err, req, res, next) {
     res.status(err.status || 500);
    res.render('error');
 });
+
+app.use(morgan(function (tokens, req, res) {
+    if (req.method === 'GET'){
+        return [
+            tokens.method(req, res),
+            tokens.url(req, res),
+            tokens.status(req, res),
+            `date - ${new Date()}`,
+            tokens.res(req, res, 'content-length'), '-',
+            tokens['response-time'](req, res), 'ms',
+            JSON.stringify(req.query),
+            JSON.stringify(req.data)
+        ].join(' ')
+    } else {
+        return [
+            tokens.method(req, res),
+            tokens.url(req, res),
+            tokens.status(req, res),
+            `date - ${new Date()}`,
+            tokens.res(req, res, 'content-length'), '-',
+            tokens['response-time'](req, res), 'ms',
+            JSON.stringify(req.body),
+            JSON.stringify(req.data),
+        ].join(' ')
+    }
+}, {stream: fs.createWriteStream(path.join(__dirname, 'log.txt'), { flags: 'a' })}));
+
 
 dataBase.authenticate()
     .then(() => {console.log('Connected to DB')})
