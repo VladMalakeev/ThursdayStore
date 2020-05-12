@@ -57,10 +57,13 @@ const getProperties = async (lang = constants.DefaultLanguage, admin) => {
         })
 };
 
-const getPropertyById = async (id) => {
-  let property = await propertyModel.findByPk(id);
+const getPropertyById = async (id, lang = constants.DefaultLanguage, admin) => {
+  let property = await propertyModel.findByPk(id,{include:[{association:'name',attributes:{exclude:['id']}}]});
   if(!property) throw functions.badRequest('Wrong property id');
-  return property;
+  return {
+            id:property.id,
+            name:admin ? property.name : property.name[lang]
+  };
 };
 
 const getManyProperties = async (propertyList) => {
@@ -101,6 +104,8 @@ const deleteProperty = async (id) => {
             throw error;
         })
 };
+
+
 
 module.exports = {
     addProperties,

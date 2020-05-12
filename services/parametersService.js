@@ -5,6 +5,7 @@ const propertyService = require('../services/propertyService');
 const functions = require('../utils/functions');
 const constants = require('../utils/Constants');
 const languageService = require('../services/languageService');
+const {Op} = require('sequelize');
 
 const addParameters = async (propertyId, parameters, transaction) => {
     if(!propertyId) throw functions.badRequest('PropertyId is required!');
@@ -43,6 +44,15 @@ const getParameters = async (lang = constants.DefaultLanguage, propertyId, admin
                 }
             })
         })
+};
+
+const getParameterById = async (id, lang = constants.DefaultLanguage, admin) => {
+    let parameter = await parametersModel.findByPk(id,{include:[{association:'name',attributes:{exclude:['id']}}]});
+    if(!parameter) throw functions.badRequest('Wrong parameter id');
+    return {
+        id:parameter.id,
+        name:admin ? parameter.name : parameter.name[lang]
+    };
 };
 
 const editParameter = async (name, id, propertyId) => {
@@ -92,10 +102,16 @@ const deleteParameter = async (id) => {
         .catch(error => {throw error})
 };
 
+const checkIsParameterBelongsToProperties = async (data) => {
+   return parametersModel.findAll({where:{propertyId:data.propertyId, id:{[Op.in]:data.parameters}}})
+};
+
 module.exports = {
     addParameters,
     getParameters,
     editParameter,
-    deleteParameter
+    deleteParameter,
+    checkIsParameterBelongsToProperties,
+    getParameterById
 };
 

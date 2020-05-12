@@ -2,9 +2,13 @@ const Sequelize = require("sequelize");
 const db = require('../index');
 const Properties = require('./properties');
 const Parameters = require('./parameters');
-const ProductsProperties = require('./products_properties');
 
-const Properties_Parameters = db.define('properties_parameters',{
+const PropertiesParameters = db.define('propertiesParameters',{
+    id:{
+        type:Sequelize.INTEGER,
+        primaryKey:true,
+        autoIncrement:true
+    },
     parameterId:{
         type:Sequelize.INTEGER,
         references:{
@@ -21,12 +25,11 @@ const Properties_Parameters = db.define('properties_parameters',{
     }
 },{timestamps:false});
 
-ProductsProperties.hasMany(Properties_Parameters);
-Properties_Parameters.belongsTo(ProductsProperties);
+Properties.hasMany(PropertiesParameters);
+Parameters.hasMany(PropertiesParameters);
+PropertiesParameters.belongsTo(Properties, {foreignKey:'propertyId'});
+PropertiesParameters.belongsTo(Parameters, {foreignKey:'parameterId'});
 
-Properties.belongsToMany(Parameters, {through:Properties_Parameters});
-Parameters.belongsToMany(Properties, {through:Properties_Parameters});
+PropertiesParameters.sync({alter:true});
 
-Properties_Parameters.sync({alter:true});
-
-module.exports = Properties_Parameters;
+module.exports = PropertiesParameters;

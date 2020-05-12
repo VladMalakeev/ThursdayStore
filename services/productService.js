@@ -1,12 +1,15 @@
 const db = require('../db/index');
 const languageService = require('../services/languageService');
 const stringsService = require('./stringService');
+const parametersService = require('./parametersService');
 const propertyService = require('./propertyService');
 const subCategoryService = require('./subCategoryService');
 const subCategoryModel = require('../db/models/subCategories');
 const imageService = require('./imagesService');
 const productModel = require('../db/models/products');
-const productPropertyModel = require('../db/models/products_properties');
+const propertiesModel = require('../db/models/properties');
+const parametersModel = require('../db/models/parameters');
+const productPropertiesParametersModel = require('../db/models/products_properties_parameters');
 const propertyParametersModel = require('../db/models/properties_parameters');
 const productsImagesModel = require('../db/models/produscts_images');
 const constants = require('../utils/Constants');
@@ -54,9 +57,6 @@ const addProduct = async (body, files) => {
 
                     await transaction.commit();
 
-                    if(body.properties){
-                        await setPropertiesForProduct(body.properties, product);
-                    }
                     return getProduct(product.id, null, 'eng', true);
                 })
                 .catch(error => {
@@ -69,39 +69,40 @@ const addProduct = async (body, files) => {
         })
 };
 
-const setPropertiesForProduct = async (properties, product) => {
-    let propertyArray = functions.parseString(properties,'properties');
-    let productsPropertiesIds = propertyArray.map(property => {
-        return {
-            propertyId:property.propertyId,
-            productId:product.id
-        }
-    });
-    let productPropertyResult = await productPropertyModel.bulkCreate(productsPropertiesIds, {returning:true})
-        .catch(error => {
-           console.log(error);
-           throw functions.badRequest('Wrong one or more property key')
-        });
+const setPropertiesForProduct = async (properties, productId) => {
+    let product = await productModel.findByPk(productId);
+    if(!product) throw functions.badRequest('Wrong product id!');
 
-    let propertiesParameters = [];
-    productPropertyResult.forEach(productProperty => {
-        propertyArray.forEach(property => {
-            if(property.propertyId === productProperty.propertyId){
-                property.parameters.forEach(parameter => {
-                    propertiesParameters.push({
-                        parameterId:parameter.parameterId,
-                        propertyId:productProperty.propertyId,
-                        productsPropertyId:productProperty.id
-                    })
-                })
+    return db.transaction()
+        .then(async transaction => {
+            try {
+                for (let property of properties) {
+                    let parameters = await parametersService.checkIsParameterBelongsToProperties(property);
+                    if (parameters.length !== property.parameters.length) throw functions.badRequest('One or more parameters does not belong to the property or in request two identical parameters!');
+                    let propertyParametersArray = property.parameters.map(parameter => {
+                        return {propertyId: property.propertyId, parameterId: parameter}
+                    });
+                    let propertyParametersResult = await propertyParametersModel.bulkCreate(propertyParametersArray, {
+                        transaction,
+                        returning: true
+                    });
+
+                    let productPropertyParameters = propertyParametersResult.map(propertyParameter => {
+                        return {productId: product.id, propertiesParameterId: propertyParameter.id}
+                    });
+                    await productPropertiesParametersModel.bulkCreate(productPropertyParameters, {
+                        transaction,
+                        returning: true
+                    });
+                }
+                transaction.commit();
+                return true;
+            }
+            catch (error) {
+                transaction.rollback();
+                throw error;
             }
         })
-    });
-
-    let propertyParametersResult = await propertyParametersModel.bulkCreate(propertiesParameters);
-    console.log(propertyParametersResult);
-
-    return true
 };
 
 const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) => {
@@ -112,16 +113,51 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
             include: [
                 {association: 'name', attributes: {exclude: ['id']}},
                 {association: 'description', attributes: {exclude: ['id']}},
-                {association: 'images'}
+                {association: 'images'},
+                {model:productPropertiesParametersModel,
+                    include:[{model:propertyParametersModel,
+                        include:[
+                            {model:propertiesModel},
+                            {model:parametersModel}
+                        ]}]}
             ]
         });
         if (!product) throw functions.badRequest('Product not exist');
+        let properties = [];
+
+       for(let productsPropertiesParameter of  product.productsPropertiesParameters){
+            let propertyExist = false;
+        for(let property of properties) {
+            if (property.propertyId === productsPropertiesParameter.propertiesParameter.property.id) {
+                let parameterName = await parametersService.getParameterById(productsPropertiesParameter.propertiesParameter.parameter.id, lang, admin);
+                property.parameters.push({
+                    parameterId: productsPropertiesParameter.propertiesParameter.parameter.id,
+                    parameterName: parameterName.name
+                });
+                propertyExist = true;
+            }
+        }
+
+            if(!propertyExist){
+                let propertyName = await propertyService.getPropertyById(productsPropertiesParameter.propertiesParameter.property.id, lang, admin);
+                let parameterName = await parametersService.getParameterById(productsPropertiesParameter.propertiesParameter.parameter.id, lang, admin);
+                properties.push({
+                    propertyId:productsPropertiesParameter.propertiesParameter.property.id,
+                    propertyName: propertyName.name,
+                    parameters:[{
+                        parameterId: productsPropertiesParameter.propertiesParameter.parameter.id,
+                        parameterName: parameterName.name
+                    }]
+                })
+            }
+        }
         return {
             id: product.id,
             name: admin ? product.name : product.name[lang],
             description: admin ? product.description : product.description[lang],
             images: product.images.map(image => image.name),
-            price:product.price
+            price:product.price,
+            properties:properties
         }
 
 
@@ -247,5 +283,6 @@ module.exports = {
     addProduct,
     getProduct,
     editProduct,
-    deleteProduct
+    deleteProduct,
+    setPropertiesForProduct
 };

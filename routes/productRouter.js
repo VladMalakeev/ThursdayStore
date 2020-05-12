@@ -61,4 +61,17 @@ router.delete('/', adminMiddleware, (req, res, next) => {
         })
 });
 
+router.post('/setProperties', adminMiddleware, (req, res, next) => {
+    productService.setPropertiesForProduct(req.body.properties, req.body.productId)
+        .then(async response => {
+            req.data = await productService.getProduct(req.body.productId, null, 'eng', req.admin);
+            next();
+        })
+        .catch(error => {
+            res.status(functions.errorStatus(error));
+            req.data = functions.errorInfo(error);
+            next();
+        })
+});
+
 module.exports = router;
