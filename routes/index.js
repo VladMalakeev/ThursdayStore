@@ -21,6 +21,14 @@ router.use("/locale", localeRouter);
 router.use("/properties", propertiesRouter);
 router.use("/parameters", parametersRouter);
 
+router.use((req, res, next) => {
+    if (!req.route) {
+        res.status(404);
+        req.data = 'route not found'
+    }
+    next();
+});
+
 router.use(async function (req, res) {
     res.setHeader("Content-Type", "application/json");
     res.json(req.data);
