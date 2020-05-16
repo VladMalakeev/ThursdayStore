@@ -290,9 +290,9 @@ const deleteProduct = async (id) => {
 };
 
 const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => {
-    if(!catId) functions.badRequest('CatId is required!');
-    if(!filters)functions.badRequest('filters is required!');
-    
+    if(!catId) throw functions.badRequest('CatId is required!');
+    if(!filters) throw functions.badRequest('filters is required!');
+
     let propertiesArray = [];
     let parametersArray = [];
 
