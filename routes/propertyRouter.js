@@ -17,6 +17,7 @@ router.get('/', adminOptionalMiddleware, (req, res, next) => {
         })
 });
 
+
 router.post('/', adminMiddleware, (req, res, next) => {
     propertyService.addProperties(req.body.properties)
         .then(response => {

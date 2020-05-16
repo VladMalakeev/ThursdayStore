@@ -4,16 +4,16 @@ const errorStatus = (error) => {
 
 const errorInfo = (error) => {
     if (process.env.NODE_ENV === 'production') {
-        return error.info ? error.info : 'Internal Server Error';
+        return error.message ? error.message : 'Internal Server Error';
     } else {
-        return error.info ? error.info : error;
+        return error.message ? error.message : error;
     }
 };
 
 const badRequest = (message) => {
     return {
         status: 400,
-        info: message
+        message: message
     }
 };
 

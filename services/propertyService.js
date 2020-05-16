@@ -1,7 +1,11 @@
 const propertyModel = require('../db/models/properties');
-const stringsService = require('../services/stringService');
-const languageService = require('../services/languageService');
-const parametersService = require('../services/parametersService');
+const parametersModel = require('../db/models/parameters');
+const productModel = require('../db/models/products');
+const productPropertiesParametersModel = require('../db/models/products_properties_parameters');
+const propertyParametersModel = require('../db/models/properties_parameters');
+const stringsService = require('./stringService');
+const languageService = require('./languageService');
+const parametersService = require('./parametersService');
 const functions = require('../utils/functions');
 const db = require('../db/index');
 const constants = require('../utils/Constants');
@@ -105,7 +109,72 @@ const deleteProperty = async (id) => {
         })
 };
 
+const getParameterById = async (id, lang = constants.DefaultLanguage, admin) => {
+    let parameter = await parametersModel.findByPk(id,{include:[{association:'name',attributes:{exclude:['id']}}]});
+    if(!parameter) throw functions.badRequest('Wrong parameter id');
+    return {
+        id:parameter.id,
+        name:admin ? parameter.name : parameter.name[lang]
+    };
+};
 
+
+const getFiltersBySubCategoryId = async (catId, lang) => {
+    let products = await productModel.findAll({
+        where: {categoryId: catId},
+        include: [
+            {
+                model: productPropertiesParametersModel,
+                include: [{
+                    model: propertyParametersModel,
+                    include: [
+                        {model: propertyModel},
+                        {model: parametersModel}
+                    ]
+                }]
+            }
+        ]
+    });
+
+    let properties = [];
+    for (let product of products) {
+        for (let productsPropertiesParameter of product.productsPropertiesParameters) {
+            let propertyExist = false;
+            for (let property of properties) {
+                if (property.propertyId === productsPropertiesParameter.propertiesParameter.property.id) {
+                    let parameterName = await getParameterById(productsPropertiesParameter.propertiesParameter.parameter.id, lang, false);
+                    let parameterExist = false;
+                    property.parameters.forEach(parameter => {
+                       if(parameter.parameterId === productsPropertiesParameter.propertiesParameter.parameter.id){
+                           parameterExist = true;
+                       }
+                    });
+                    if(!parameterExist) {
+                        property.parameters.push({
+                            parameterId: productsPropertiesParameter.propertiesParameter.parameter.id,
+                            parameterName: parameterName.name
+                        });
+                    }
+                    propertyExist = true;
+                }
+            }
+
+            if (!propertyExist) {
+                let propertyName = await getPropertyById(productsPropertiesParameter.propertiesParameter.property.id, lang, false);
+                let parameterName = await getParameterById(productsPropertiesParameter.propertiesParameter.parameter.id, lang, false);
+                properties.push({
+                    propertyId: productsPropertiesParameter.propertiesParameter.property.id,
+                    propertyName: propertyName.name,
+                    parameters: [{
+                        parameterId: productsPropertiesParameter.propertiesParameter.parameter.id,
+                        parameterName: parameterName.name
+                    }]
+                })
+            }
+        }
+    }
+    return properties
+};
 
 module.exports = {
     addProperties,
@@ -113,6 +182,7 @@ module.exports = {
     editProperty,
     deleteProperty,
     getPropertyById,
-    getManyProperties
+    getManyProperties,
+    getFiltersBySubCategoryId
 };
 

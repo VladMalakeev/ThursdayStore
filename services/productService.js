@@ -73,6 +73,8 @@ const setPropertiesForProduct = async (properties, productId) => {
     let product = await productModel.findByPk(productId);
     if(!product) throw functions.badRequest('Wrong product id!');
 
+    if(!properties) throw functions.badRequest('Properties is required!');
+
     return db.transaction()
         .then(async transaction => {
             try {
