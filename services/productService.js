@@ -289,11 +289,14 @@ const deleteProduct = async (id) => {
         })
 };
 
-const applyFilter = async (catId, properties, lang) => {
+const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => {
+    if(!catId) functions.badRequest('CatId is required!');
+    if(!filters)functions.badRequest('filters is required!');
+    
     let propertiesArray = [];
     let parametersArray = [];
 
-    properties.forEach(property => {
+    filters.forEach(property => {
         propertiesArray.push(property.propertyId);
         parametersArray = parametersArray.concat(property.parameters);
     });
