@@ -74,4 +74,17 @@ router.post('/setProperties', adminMiddleware, (req, res, next) => {
         })
 });
 
+router.post('/filter', (req, res, next) => {
+    productService.applyFilter(req.body.catId, req.body.filters, req.body.lang)
+        .then(async response => {
+            req.data = response;
+            next();
+        })
+        .catch(error => {
+            res.status(functions.errorStatus(error));
+            req.data = functions.errorInfo(error);
+            next();
+        })
+});
+
 module.exports = router;
