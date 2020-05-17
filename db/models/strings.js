@@ -5,10 +5,10 @@ const Strings = db.define("strings",{
     eng:{
         type:Sequelize.STRING
     },
-    ru:{
+    rus:{
         type:Sequelize.STRING
     },
-    ua:{
+    ukr:{
         type:Sequelize.STRING
     }
 },{timestamps:false,});
