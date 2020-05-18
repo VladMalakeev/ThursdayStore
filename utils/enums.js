@@ -1,4 +1,4 @@
-const languages = ['eng', 'ru', 'ua'];
+const languages = ['eng', 'rus', 'ukr'];
 
 module.exports = {
     languages
