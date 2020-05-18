@@ -21,7 +21,9 @@ router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
 });
 
 router.post('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimit), (req, res, next) => {
-    productService.addProduct(req.body, req.files)
+    //productService.addProduct(req.body, req.files)
+    let image = req.body.image ? req.body.image.map(image => {return {filename:image}}): [];
+    productService.addProduct(req.body, image)
         .then(response => {
             req.data = response;
             next();
@@ -34,7 +36,9 @@ router.post('/', adminMiddleware, imageUpload.array('image', constants.ImagesLim
 });
 
 router.put('/', adminMiddleware, imageUpload.array('image', constants.ImagesLimit), (req, res, next) => {
-    productService.editProduct(req.body, req.files)
+    //productService.editProduct(req.body, req.files)
+    let image = req.body.image ? req.body.image.map(image => {return {filename:image}}): [];
+    productService.editProduct(req.body, image)
         .then(response => {
             req.data = response;
             next();

@@ -17,6 +17,13 @@ const badRequest = (message) => {
     }
 };
 
+const internalError = (message) => {
+    return {
+        status: 500,
+        message: message
+    }
+};
+
 const isArray = (parameter, name) => {
     if (!Array.isArray(parameter)) throw badRequest(`${name} must be an array!`);
     if(parameter.length === 0) throw badRequest(`${name} is empty`);
@@ -40,5 +47,6 @@ module.exports = {
     errorInfo,
     errorStatus,
     badRequest,
-    isArray
+    isArray,
+    internalError
 };

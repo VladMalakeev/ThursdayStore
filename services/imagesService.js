@@ -45,7 +45,7 @@ const updateImage = async (id, name, path, transaction) => {
     return imageModel.findOne({where:{id}})
         .then(image => {
             if(!image) throw 'Image not updated';
-            deleteImageFromFileSystem(path, image.name);
+            let result = deleteImageFromFileSystem(path, image.name);
             return image.update({name}, {transaction, returning:true});
         })
         .catch(error => {
@@ -65,7 +65,7 @@ const deleteImage = async (id, path, transaction) => {
     return imageModel.findOne({where:{id:id}})
         .then(image => {
             if(!image) throw 'Wrong image id';
-             deleteImageFromFileSystem(path, image.name);
+            let result = deleteImageFromFileSystem(path, image.name);
             return image.destroy({transaction});
         })
         .catch(error => {
@@ -80,7 +80,7 @@ const deleteGallery = async (images, path, transaction) => {
     let result = await imageModel.destroy({where:{name:images.map(image => image)}, returning:true, transaction});
         if(result) {
             imagesList.forEach(image => {
-                deleteImageFromFileSystem(path, image.name);
+                let result = deleteImageFromFileSystem(path, image.name);
             });
             return imagesList;
         }

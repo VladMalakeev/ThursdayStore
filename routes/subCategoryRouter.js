@@ -20,7 +20,8 @@ router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
 });
 
 router.post('/', adminMiddleware, imageUpload.single('image'), (req, res, next) => {
-    subCategoryService.addSubCategory(req.body.name, req.body.catId, req.file)
+   // subCategoryService.addSubCategory(req.body.name, req.body.catId, req.file)
+    subCategoryService.addSubCategory(req.body.name, req.body.catId, {filename:req.body.image})
         .then(response => {
             req.data = response;
             next();
@@ -33,7 +34,8 @@ router.post('/', adminMiddleware, imageUpload.single('image'), (req, res, next) 
 });
 
 router.put('/', adminMiddleware, imageUpload.single('image'), (req, res, next) => {
-    subCategoryService.editSubCategory(req.body.id, req.body.catId, req.file, req.body.name)
+    //subCategoryService.editSubCategory(req.body.id, req.body.catId, req.file, req.body.name)
+    subCategoryService.editSubCategory(req.body.id, req.body.catId, {filename:req.body.image}, req.body.name)
         .then(response => {
             req.data = response;
             next();
