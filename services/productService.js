@@ -82,7 +82,8 @@ const setPropertiesForProduct = async (properties, productId) => {
             try {
                 for (let property of properties) {
                     let parameters = await parametersService.checkIsParameterBelongsToProperties(property);
-                    if (parameters.length !== property.parameters.length) throw functions.badRequest('One or more parameters does not belong to the property or in request two identical parameters!');
+                    if (parameters.length !== property.parameters.length) throw functions.badRequest('One or more parameters does not belong to the property!');
+                    if(await checkExistsParametersOnProduct(parameters, productId)) throw functions.badRequest('One or more parameters already attached to the product!')
                     let propertyParametersArray = property.parameters.map(parameter => {
                         return {propertyId: property.propertyId, parameterId: parameter}
                     });
@@ -295,39 +296,54 @@ const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => 
 
     let propertiesArray = [];
     let parametersArray = [];
+    let productInclude =  [
+        {association: 'name', attributes: {exclude: ['id']}},
+        {association: 'description', attributes: {exclude: ['id']}},
+        {association: 'images'}
+    ];
 
     filters.forEach(property => {
         propertiesArray.push(property.propertyId);
         parametersArray = parametersArray.concat(property.parameters);
     });
 
-    return productModel.findAll({
-        where: {categoryId: catId},
-        include: [
-            {association: 'name', attributes: {exclude: ['id']}},
-            {association: 'description', attributes: {exclude: ['id']}},
-            {association: 'images'},
-            {
-                model: productPropertiesParametersModel,
-                include: [{
-                    model: propertyParametersModel,
-                    where: {propertyId:propertiesArray, parameterId:parametersArray}
-                }]
-            }
-        ]
-    })
+
+    if(parametersArray.length !== 0){
+        productInclude.push( {
+           model: productPropertiesParametersModel,
+           where:{productId:{[Op.not]:null}},
+           include: [{
+               model: propertyParametersModel
+           }]
+       })
+    }
+
+    return productModel.findAll({where: {categoryId: catId}, include:productInclude})
         .then(products => {
-           let result = [];
+            let result = [];
+            const getProductObj = (product) => {
+               return {
+                   id: product.id,
+                   name: product.name ? product.name[lang] : null,
+                   description: product.description ? product.description[lang] : null,
+                   images: product.images ? product.images.map(image => image.name) : null,
+                   price: product.price
+               }
+           };
+
         products.forEach(product => {
-            if(product.productsPropertiesParameters.length > 0) {
-                result.push({
-                    id: product.id,
-                    name: product.name[lang],
-                    description: product.description[lang],
-                    images: product.images.map(image => image.name),
-                    price: product.price
+            if(parametersArray.length > 0) {
+                let counter = 0;
+                product.productsPropertiesParameters.forEach(productsPropertiesParameter => {
+                    if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId) &&
+                        propertiesArray.includes(productsPropertiesParameter.propertiesParameter.propertyId)) {
+                        counter++;
+                    }
                 });
-            }
+                if (counter === parametersArray.length) {
+                    result.push(getProductObj(product));
+                }
+            }else result.push(getProductObj(product));
         });
             return result;
     })
@@ -335,6 +351,30 @@ const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => 
             console.log(error);
             throw error;
         })
+};
+
+const checkExistsParametersOnProduct = async (parameters, productId) => {
+    let parametersArray = [];
+    parameters.forEach(parameter => {
+        parametersArray.push(parameter.id);
+    });
+
+   return productModel.findOne({where:{id:productId}, include:[{
+            model: productPropertiesParametersModel,
+            where:{productId:{[Op.not]:null}},
+            include: [{
+                model: propertyParametersModel
+            }]
+        }]}).then(product => {
+            console.log(product)
+        let counter = 0;
+        product.productsPropertiesParameters.forEach(productsPropertiesParameter => {
+            if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId)) {
+                counter++;
+            }
+        });
+        return Boolean(counter);
+    })
 };
 
 module.exports = {
