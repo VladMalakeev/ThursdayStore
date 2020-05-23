@@ -80,10 +80,14 @@ const setPropertiesForProduct = async (properties, productId) => {
     return db.transaction()
         .then(async transaction => {
             try {
+                if(! await propertyService.checkIsBelongsPropertiesToCategory(product.categoryId, properties.map(property => property.propertyId))) {
+                    throw functions.badRequest('One or more subcategory id of properties did not match with subcategory id of the product!');
+                }
                 for (let property of properties) {
                     let parameters = await parametersService.checkIsParameterBelongsToProperties(property);
                     if (parameters.length !== property.parameters.length) throw functions.badRequest('One or more parameters does not belong to the property!');
                     if(await checkExistsParametersOnProduct(parameters, productId)) throw functions.badRequest('One or more parameters already attached to the product!')
+
                     let propertyParametersArray = property.parameters.map(parameter => {
                         return {propertyId: property.propertyId, parameterId: parameter}
                     });
@@ -366,14 +370,16 @@ const checkExistsParametersOnProduct = async (parameters, productId) => {
                 model: propertyParametersModel
             }]
         }]}).then(product => {
-            console.log(product)
-        let counter = 0;
-        product.productsPropertiesParameters.forEach(productsPropertiesParameter => {
-            if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId)) {
-                counter++;
+            if(!product) return false;
+            else {
+                let counter = 0;
+                product.productsPropertiesParameters.forEach(productsPropertiesParameter => {
+                    if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId)) {
+                        counter++;
+                    }
+                });
+                return Boolean(counter);
             }
-        });
-        return Boolean(counter);
     })
 };
 

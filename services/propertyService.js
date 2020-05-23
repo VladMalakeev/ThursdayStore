@@ -6,6 +6,7 @@ const propertyParametersModel = require('../db/models/properties_parameters');
 const stringsService = require('./stringService');
 const languageService = require('./languageService');
 const parametersService = require('./parametersService');
+const subCategoryService = require('./subCategoryService');
 const functions = require('../utils/functions');
 const db = require('../db/index');
 const constants = require('../utils/Constants');
@@ -17,9 +18,12 @@ const addProperties = async (properties) => {
         .then(async transaction => {
             let propertiesResultArray = [];
             for(let property of properties) {
-                if(!property.propertyName) throw functions.badRequest('property object must contain parameter - propertyName');
+                if(!property.propertyName) throw functions.badRequest('Property object must contain parameter - propertyName!');
+                if(!property.catId)throw functions.badRequest('Property object must contain parameter - catId!');
+                if(!await subCategoryService.isExistSubCategory(property.catId))throw functions.badRequest(`SubCategory id - ${property.catId} not exist!`);
+
                 let string = await stringsService.addString(property.propertyName, transaction);
-                let propertyResult = await propertyModel.create({nameId:string.id}, {transaction, returning:true})
+                let propertyResult = await propertyModel.create({nameId:string.id, subCategoryId:property.catId}, {transaction, returning:true})
                     .then(async result =>{
                         let parameters;
                         if(property.parameters){
@@ -29,7 +33,8 @@ const addProperties = async (properties) => {
                         return {
                             propertyId:result.id,
                             propertyName:string,
-                            parameters:parameters
+                            parameters:parameters,
+                            catId:property.catId
                         }
                     }).catch(error => {
                         transaction.rollback();
@@ -47,9 +52,11 @@ const addProperties = async (properties) => {
     })
 };
 
-const getProperties = async (lang = constants.DefaultLanguage, admin) => {
+const getProperties = async (catId, lang = constants.DefaultLanguage, admin) => {
+    if(!catId)throw functions.badRequest('CatId is required!');
+    if(!await subCategoryService.isExistSubCategory(catId))throw functions.badRequest(`SubCategory id - ${catId} not exist!`);
     if(! await languageService.checkLanguageByKey(lang)) throw functions.badRequest('Wrong language key');
-    return propertyModel.findAll({include:[{association:'name'}]})
+    return propertyModel.findAll({where:{subCategoryId:catId}, include:[{association:'name'}]})
         .then(properties => {
             return properties.map(property => {
                 delete property.name.dataValues.id;
@@ -78,18 +85,26 @@ const getManyProperties = async (propertyList) => {
         })
 };
 
-const editProperty = async (name, id) => {
-    if(!name) throw functions.badRequest('Name is required!');
+const editProperty = async (catId, name, id) => {
+    if(!name && !catId) throw functions.badRequest('Name or catId is required!');
     if(!id) throw functions.badRequest('Id is required!');
+    let string;
 
-    let property = await propertyModel.findByPk(id);
+    let property = await propertyModel.findByPk(id, {include:[{association:'name', attributes:{exclude:['id']}}]});
     if(!property) throw functions.badRequest('Wrong property id');
-    let string = await stringsService.editString(name, property.nameId);
+    if(name) {
+        string = await stringsService.editString(name, property.nameId);
+        delete string[1][0].dataValues.id;
+    }
+    if(catId){
+        if(!await subCategoryService.isExistSubCategory(catId))throw functions.badRequest(`SubCategory id - ${catId} not exist!`);
+        await property.update({subCategoryId:catId});
+    }
 
-    delete string[1][0].dataValues.id;
     return {
         id:property.id,
-        name:string[1][0]
+        name: string ? string[1][0] : property.name,
+        catId:catId
     }
 };
 
@@ -176,6 +191,12 @@ const getFiltersBySubCategoryId = async (catId, lang) => {
     return properties
 };
 
+const checkIsBelongsPropertiesToCategory = async (catId, properties) => {
+    let result = await propertyModel.findAll({where:{subCategoryId:catId, id:properties}});
+    if(result.length === properties.length) return true;
+    else return false;
+};
+
 module.exports = {
     addProperties,
     getProperties,
@@ -183,6 +204,7 @@ module.exports = {
     deleteProperty,
     getPropertyById,
     getManyProperties,
-    getFiltersBySubCategoryId
+    getFiltersBySubCategoryId,
+    checkIsBelongsPropertiesToCategory
 };
 

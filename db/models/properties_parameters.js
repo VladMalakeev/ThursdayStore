@@ -25,8 +25,8 @@ const PropertiesParameters = db.define('propertiesParameters',{
     }
 },{timestamps:false});
 
-Properties.hasMany(PropertiesParameters);
-Parameters.hasMany(PropertiesParameters);
+Properties.hasMany(PropertiesParameters, {onDelete:'CASCADE'});
+Parameters.hasMany(PropertiesParameters, {onDelete:'CASCADE'});
 PropertiesParameters.belongsTo(Properties, {foreignKey:'propertyId'});
 PropertiesParameters.belongsTo(Parameters, {foreignKey:'parameterId'});
 

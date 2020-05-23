@@ -1,7 +1,6 @@
 const parametersModel = require('../db/models/parameters');
 const stringService = require('../services/stringService');
 const propertyModel = require('../db/models/properties');
-const propertyService = require('../services/propertyService');
 const functions = require('../utils/functions');
 const constants = require('../utils/Constants');
 const languageService = require('../services/languageService');

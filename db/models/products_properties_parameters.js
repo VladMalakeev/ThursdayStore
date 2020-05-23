@@ -25,14 +25,16 @@ const ProductsPropertiesParameters = db.define('productsPropertiesParameters',{
     }
 },{timestamps:false});
 
-PropertiesParameters.belongsToMany(Products, {through:ProductsPropertiesParameters});
-Products.belongsToMany(PropertiesParameters, {through:ProductsPropertiesParameters});
+PropertiesParameters.belongsToMany(Products, {through:ProductsPropertiesParameters,onDelete:'CASCADE'});
+Products.belongsToMany(PropertiesParameters, {through:ProductsPropertiesParameters,onDelete:'CASCADE'});
 
-PropertiesParameters.hasMany(ProductsPropertiesParameters);
-Products.hasMany(ProductsPropertiesParameters);
+PropertiesParameters.hasMany(ProductsPropertiesParameters, {onDelete:'CASCADE'});
+Products.hasMany(ProductsPropertiesParameters, {onDelete:'CASCADE'});
 
 ProductsPropertiesParameters.belongsTo(Products);
-ProductsPropertiesParameters.belongsTo(PropertiesParameters);
+ProductsPropertiesParameters.belongsTo(PropertiesParameters, {onDelete:'CASCADE'});
+
+
 
 ProductsPropertiesParameters.sync({alter:true});
 

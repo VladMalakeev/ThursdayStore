@@ -5,7 +5,7 @@ const functions = require('../utils/functions');
 const propertyService = require('../services/propertyService');
 
 router.get('/', adminOptionalMiddleware, (req, res, next) => {
-    propertyService.getProperties(req.query.lang, req.admin)
+    propertyService.getProperties(req.query.catId, req.query.lang, req.admin)
         .then(response => {
             req.data = response;
             next();
@@ -32,7 +32,7 @@ router.post('/', adminMiddleware, (req, res, next) => {
 });
 
 router.put('/', adminMiddleware, (req, res, next) => {
-    propertyService.editProperty(req.body.name, req.body.id)
+    propertyService.editProperty(req.body.catId, req.body.name, req.body.id)
         .then(response => {
             req.data = response;
             next();
