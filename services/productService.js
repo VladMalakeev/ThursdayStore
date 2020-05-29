@@ -4,7 +4,6 @@ const stringsService = require('./stringService');
 const parametersService = require('./parametersService');
 const propertyService = require('./propertyService');
 const subCategoryService = require('./subCategoryService');
-const subCategoryModel = require('../db/models/subCategories');
 const imageService = require('./imagesService');
 const productModel = require('../db/models/products');
 const propertiesModel = require('../db/models/properties');
@@ -15,7 +14,6 @@ const productsImagesModel = require('../db/models/produscts_images');
 const constants = require('../utils/Constants');
 const functions = require('../utils/functions');
 const {Op} = require('sequelize');
-const Sequelize = require('sequelize');
 
 const checkPrice = async (price) => {
     if (!price) throw functions.badRequest('Price is required');
@@ -165,8 +163,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
         }
         return {
             id: product.id,
-            name: admin ? product.name : product.name[lang],
-            description: admin ? product.description : product.description[lang],
+            name: admin ? product.name : functions.checkIsExistString(product.name, lang),
+            description: admin ? product.description : functions.checkIsExistString(product.description, lang),
             images: product.images.map(image => image.name),
             price: product.price,
             properties: properties
@@ -188,8 +186,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
                 return products.map(product => {
                     return {
                         id: product.id,
-                        name: admin ? product.name : product.name[lang],
-                        description: admin ? product.description : product.description[lang],
+                        name: admin ? product.name : functions.checkIsExistString(product.name, lang),
+                        description: admin ? product.description : functions.checkIsExistString(product.description, lang),
                         images: product.images.map(image => image.name),
                         price: product.price
                     }

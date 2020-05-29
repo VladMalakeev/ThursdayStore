@@ -41,7 +41,7 @@ const getLocale = async (lang = constants.DefaultLanguage, admin) => {
                 resultList.push({
                     id:locale.id,
                     key:locale.key,
-                    value:admin ? locale.value : locale.value[lang],
+                    value:admin ? locale.value : functions.checkIsExistString(locale.value, lang),
                 })
             });
             return resultList;
@@ -55,7 +55,7 @@ const getLocaleById = async (id, lang = constants.DefaultLanguage, admin) => {
             return {
                 id:locale.id,
                 key:locale.key,
-                value:admin ? locale.value : locale.value[lang],
+                value:admin ? locale.value : functions.checkIsExistString(locale.value, lang),
             }
         })
 };

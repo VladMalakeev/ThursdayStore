@@ -44,7 +44,7 @@ const getCategories = async (id, lang = constants.DefaultLanguage, admin) => {
             .then(category => {
                 return {
                     id:category.id,
-                    name:admin ? category.name : category.name[lang],
+                    name:admin ? category.name : functions.checkIsExistString(category.name, lang),
                     image:category.image ? category.image.name : null
                 }
             })
@@ -64,7 +64,7 @@ const getCategories = async (id, lang = constants.DefaultLanguage, admin) => {
             categories.forEach(category => {
                 resultList.push({
                     id:category.id,
-                    name: admin ? category.name : category.name[lang],
+                    name: admin ? category.name : functions.checkIsExistString(category.name, lang),
                     image: category.image ? category.image.name: null
                 })
             });

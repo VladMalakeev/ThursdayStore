@@ -47,7 +47,7 @@ const getSubCategories = async (id, catId, lang = constants.DefaultLanguage, adm
             .then(subCategory => {
                 return {
                     id:subCategory.id,
-                    name:admin ? subCategory.name : subCategory.name[lang],
+                    name:admin ? subCategory.name : functions.checkIsExistString(subCategory.name, lang),
                     image:subCategory.image ? subCategory.image.name: null
                 }
             })
@@ -68,7 +68,7 @@ const getSubCategories = async (id, catId, lang = constants.DefaultLanguage, adm
             subCategories.forEach(subCategory => {
                 resultList.push({
                     id:subCategory.id,
-                    name: admin ? subCategory.name : subCategory.name[lang],
+                    name: admin ? subCategory.name :functions.checkIsExistString(subCategory.name, lang),
                     image:subCategory.image ? subCategory.image.name: null
                 })
             });

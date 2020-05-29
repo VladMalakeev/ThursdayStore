@@ -62,7 +62,7 @@ const getProperties = async (catId, lang = constants.DefaultLanguage, admin) => 
                 delete property.name.dataValues.id;
                 return {
                     id:property.id,
-                    name: admin ? property.name :property.name[lang]
+                    name: admin ? property.name :functions.checkIsExistString(property.name, lang),
                 }
             })
         })
@@ -73,7 +73,7 @@ const getPropertyById = async (id, lang = constants.DefaultLanguage, admin) => {
   if(!property) throw functions.badRequest('Wrong property id');
   return {
             id:property.id,
-            name:admin ? property.name : property.name[lang]
+            name:admin ? property.name : functions.checkIsExistString(property.name, lang),
   };
 };
 

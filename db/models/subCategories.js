@@ -29,7 +29,7 @@ const SubCategories = db.define("subCategories",{
 },{timestamps:false});
 
 Strings.hasOne(SubCategories,{foreignKey:'nameId'});
-Images.hasOne(SubCategories, {foreignKey:'imageId', onDelete:'NO ACTION'});
+Images.hasOne(SubCategories, {foreignKey:'imageId', onDelete:'SET NULL'});
 SubCategories.belongsTo(Strings, {as:'name'});
 SubCategories.belongsTo(Images,{as:'image'});
 

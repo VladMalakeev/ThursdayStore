@@ -4,7 +4,7 @@ const db = require('../index');
 const Images = db.define("images",{
     name:{
         type:Sequelize.TEXT,
-        unique:true
+       // unique:true
     }
 },{timestamps:false});
 

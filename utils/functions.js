@@ -1,3 +1,5 @@
+const defaultLanguage = require('./Constants').DefaultLanguage;
+
 const errorStatus = (error) => {
     return error.status ? error.status : 500;
 };
@@ -42,11 +44,17 @@ const parseString = (string, name) => {
     }else return string;
 };
 
+const checkIsExistString = (object, lang) => {
+    if(object[lang]) return object[lang];
+    else return object[defaultLanguage];
+};
+
 module.exports = {
     parseString,
     errorInfo,
     errorStatus,
     badRequest,
     isArray,
-    internalError
+    internalError,
+    checkIsExistString
 };

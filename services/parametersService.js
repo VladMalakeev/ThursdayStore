@@ -39,7 +39,7 @@ const getParameters = async (lang = constants.DefaultLanguage, propertyId, admin
             return parameters.map(parameter => {
                 return {
                     id:parameter.id,
-                    name: admin ? parameter.name :parameter.name[lang]
+                    name: admin ? parameter.name :functions.checkIsExistString(parameter.name, lang),
                 }
             })
         })
@@ -50,7 +50,7 @@ const getParameterById = async (id, lang = constants.DefaultLanguage, admin) => 
     if(!parameter) throw functions.badRequest('Wrong parameter id');
     return {
         id:parameter.id,
-        name:admin ? parameter.name : parameter.name[lang]
+        name:admin ? parameter.name : functions.checkIsExistString(parameter.name, lang),
     };
 };
 

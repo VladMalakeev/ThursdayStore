@@ -21,7 +21,7 @@ const Categories = db.define("categories",{
 },{timestamps:false});
 
 Strings.hasOne(Categories,{foreignKey:'nameId'});
-Images.hasOne(Categories, {foreignKey:'imageId'});
+Images.hasOne(Categories, {foreignKey:'imageId',onDelete:'SET NULL'});
 Categories.belongsTo(Strings,{as:'name'});
 Categories.belongsTo(Images,{as:'image'});
 
