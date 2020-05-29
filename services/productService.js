@@ -335,20 +335,33 @@ const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => 
                }
            };
 
-        products.forEach(product => {
+       label: for(let i = 0;i< products.length;i++ ) {
             if(parametersArray.length > 0) {
-                let counter = 0;
-                product.productsPropertiesParameters.forEach(productsPropertiesParameter => {
-                    if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId) &&
-                        propertiesArray.includes(productsPropertiesParameter.propertiesParameter.propertyId)) {
-                        counter++;
+                if(propertiesArray.length === 1){
+                    let counter = 0;
+                    products[i].productsPropertiesParameters.forEach(productsPropertiesParameter => {
+                        if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId)) {
+                            counter++;
+                        }
+                    });
+                    if (counter) {
+                        result.push(getProductObj(products[i]));
                     }
-                });
-                if (counter === parametersArray.length) {
-                    result.push(getProductObj(product));
                 }
-            }else result.push(getProductObj(product));
-        });
+                else{
+                    let productParametersList = products[i].productsPropertiesParameters.map(elem => elem.propertiesParameter.parameterId);
+                    for(let j = 0; j < filters.length; j++ ){
+                        let counter = 0;
+                        filters[j].parameters.forEach(parameter => {
+                            if(productParametersList.includes(parameter))counter++;
+                        });
+                        if( filters[j].parameters.length > 0 && !counter) continue label;
+                    }
+                    result.push(getProductObj(products[i]));
+                }
+
+            }else result.push(getProductObj(products[i]));
+        }
             return result;
     })
         .catch(error => {
