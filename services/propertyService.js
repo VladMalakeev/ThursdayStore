@@ -152,7 +152,13 @@ const getFiltersBySubCategoryId = async (catId, lang) => {
     });
 
     let properties = [];
+    let prices = {
+        min:null,
+        max:null
+    };
     for (let product of products) {
+        if(product.price < prices.min || prices.min === null)prices.min = product.price;
+        if(product.price > prices.max || prices.min === null)prices.max = product.price;
         for (let productsPropertiesParameter of product.productsPropertiesParameters) {
             let propertyExist = false;
             for (let property of properties) {
@@ -188,7 +194,10 @@ const getFiltersBySubCategoryId = async (catId, lang) => {
             }
         }
     }
-    return properties
+    return {
+        properties:properties,
+        prices:prices
+    }
 };
 
 const checkIsBelongsPropertiesToCategory = async (catId, properties) => {

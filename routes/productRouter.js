@@ -8,7 +8,7 @@ const productService = require('../services/productService');
 const constants = require('../utils/Constants');
 
 router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
-    productService.getProduct(req.params.id, req.query.catId, req.query.lang, req.admin)
+    productService.getProduct(req.params.id, req.query.catId, req.query.lang, req.query.currency, req.admin)
         .then(response => {
             req.data = response;
             next();
@@ -79,7 +79,7 @@ router.post('/setProperties', adminMiddleware, (req, res, next) => {
 });
 
 router.post('/filter', (req, res, next) => {
-    productService.applyFilter(req.body.catId, req.body.filters, req.body.lang)
+    productService.applyFilter(req.body.catId, req.body.filters, req.body.prices, req.body.lang)
         .then(async response => {
             req.data = response;
             next();

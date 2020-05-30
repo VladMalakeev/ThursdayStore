@@ -1,4 +1,6 @@
 const defaultLanguage = require('./Constants').DefaultLanguage;
+const defaultCurrency = require('./Constants').DefaultCurrency;
+const enums = require("./enums");
 
 const errorStatus = (error) => {
     return error.status ? error.status : 500;
@@ -49,6 +51,11 @@ const checkIsExistString = (object, lang) => {
     else return object[defaultLanguage];
 };
 
+const checkIsExistPrice = (object, currency) => {
+    if(object[currency]) return object[currency]+enums.currencies[currency];
+    else return object[defaultCurrency]+enums.currencies[defaultCurrency];
+};
+
 module.exports = {
     parseString,
     errorInfo,
@@ -56,5 +63,6 @@ module.exports = {
     badRequest,
     isArray,
     internalError,
-    checkIsExistString
+    checkIsExistString,
+    checkIsExistPrice
 };

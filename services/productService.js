@@ -12,19 +12,11 @@ const productPropertiesParametersModel = require('../db/models/products_properti
 const propertyParametersModel = require('../db/models/properties_parameters');
 const productsImagesModel = require('../db/models/produscts_images');
 const constants = require('../utils/Constants');
+const currencyService = require('../services/currencyService');
 const functions = require('../utils/functions');
 const {Op} = require('sequelize');
 
-const checkPrice = async (price) => {
-    if (!price) throw functions.badRequest('Price is required');
-    if (!parseFloat(price)) {
-        throw functions.badRequest('Invalid price format');
-    } else {
-        let priceValue = parseFloat(price);
-        if (priceValue < 0) throw functions.badRequest('Invalid price value');
-        else return priceValue;
-    }
-};
+
 
 const addProduct = async (body, files) => {
     return db.transaction()
@@ -35,12 +27,12 @@ const addProduct = async (body, files) => {
             let name = functions.parseString(body.name, 'name');
             let description = functions.parseString(body.description, 'description');
 
-            let price = await checkPrice(body.price);
+            let price = await currencyService.addCurrency(body.price, transaction);
             if (!await subCategoryService.isExistSubCategory(body.catId)) {
                 throw functions.badRequest('Wrong catId parameter or category not exist');
             }
 
-            return productModel.create({categoryId: body.catId, price: price}, {transaction})
+            return productModel.create({categoryId: body.catId, priceId: price.id}, {transaction})
                 .then(async product => {
                     let newName = await stringsService.addString(name, transaction);
                     let newDescription = await stringsService.addString(description, transaction);
@@ -57,7 +49,7 @@ const addProduct = async (body, files) => {
 
                     await transaction.commit();
 
-                    return getProduct(product.id, null, 'eng', true);
+                    return getProduct(product.id, null, constants.DefaultLanguage, constants.DefaultCurrency, true);
                 })
                 .catch(error => {
                     transaction.rollback();
@@ -111,14 +103,17 @@ const setPropertiesForProduct = async (properties, productId) => {
         })
 };
 
-const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) => {
+const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency = constants.DefaultCurrency, admin) => {
     if (!await languageService.checkLanguageByKey(lang)) throw functions.badRequest('Wrong language key');
+    await  currencyService.checkCurrency(currency);
+
     if (id) {
         if (!parseInt(id)) throw functions.badRequest('Invalid id');
         let product = await productModel.findByPk(id, {
             include: [
                 {association: 'name', attributes: {exclude: ['id']}},
                 {association: 'description', attributes: {exclude: ['id']}},
+                {association:'price',attributes: {exclude: ['id']}},
                 {association: 'images'},
                 {
                     model: productPropertiesParametersModel,
@@ -166,7 +161,7 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
             name: admin ? product.name : functions.checkIsExistString(product.name, lang),
             description: admin ? product.description : functions.checkIsExistString(product.description, lang),
             images: product.images.map(image => image.name),
-            price: product.price,
+            price:admin ? product.price: functions.checkIsExistPrice(product.price,currency),
             properties: properties
         }
 
@@ -179,6 +174,7 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
             include: [
                 {association: 'name', attributes: {exclude: ['id']}},
                 {association: 'description', attributes: {exclude: ['id']}},
+                {association:'price',attributes: {exclude: ['id']}},
                 {association: 'images'}
             ]
         })
@@ -189,7 +185,7 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, admin) =>
                         name: admin ? product.name : functions.checkIsExistString(product.name, lang),
                         description: admin ? product.description : functions.checkIsExistString(product.description, lang),
                         images: product.images.map(image => image.name),
-                        price: product.price
+                        price:admin ? product.price: functions.checkIsExistPrice(product.price,currency),
                     }
                 })
             })
@@ -229,7 +225,8 @@ const editProduct = async (body, files) => {
                     }
 
                     if (body.price) {
-                        updateObj.price = await checkPrice(body.price);
+                        let price = await currencyService.editCurrency(body.price,product.priceId, transaction);
+                        updateObj.priceId = price.id;
                     }
 
                     if (body.removeImages) {
@@ -255,7 +252,7 @@ const editProduct = async (body, files) => {
                     }
                     await product.update(updateObj, {transaction});
                     transaction.commit();
-                    return await getProduct(product.id, null, 'eng', true);
+                    return await getProduct(product.id, null, constants.DefaultLanguage, constants.DefaultCurrency, true);
 
                 })
                 .catch(error => {
@@ -276,6 +273,7 @@ const deleteProduct = async (id) => {
         .then(async transaction => {
             await stringsService.deleteString(product.nameId, transaction);
             await stringsService.deleteString(product.descriptionId, transaction);
+            await currencyService.deleteCurrency(product.priceId, transaction);
             let imagesList = product.images.map(image => image.name);
             await imageService.deleteGallery(imagesList, 'products', transaction);
             let result = await product.destroy();
@@ -292,10 +290,10 @@ const deleteProduct = async (id) => {
         })
 };
 
-const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => {
+const applyFilter = async (catId, filters, prices, lang = constants.DefaultLanguage) => {
     if(!catId) throw functions.badRequest('CatId is required!');
-    if(!filters) throw functions.badRequest('filters is required!');
 
+    let where = {categoryId: catId};
     let propertiesArray = [];
     let parametersArray = [];
     let productInclude =  [
@@ -304,10 +302,20 @@ const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => 
         {association: 'images'}
     ];
 
-    filters.forEach(property => {
-        propertiesArray.push(property.propertyId);
-        parametersArray = parametersArray.concat(property.parameters);
-    });
+    if(prices){
+        let min = parseFloat(prices.min);
+        let max = parseFloat(prices.max);
+        if(min && max){
+            where.price = {[Op.between]:[min,max]}
+        }else throw functions.badRequest('Invalid price format');
+    }
+
+    if(filters) {
+        filters.forEach(property => {
+            propertiesArray.push(property.propertyId);
+            parametersArray = parametersArray.concat(property.parameters);
+        });
+    }
 
 
     if(parametersArray.length !== 0){
@@ -320,8 +328,9 @@ const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => 
        })
     }
 
-    return productModel.findAll({where: {categoryId: catId}, include:productInclude})
+    return productModel.findAll({where: where, include:productInclude})
         .then(products => {
+            console.log(products)
             let result = [];
             const getProductObj = (product) => {
                return {
@@ -333,33 +342,36 @@ const applyFilter = async (catId, filters, lang = constants.DefaultLanguage) => 
                }
            };
 
-       label: for(let i = 0;i< products.length;i++ ) {
-            if(parametersArray.length > 0) {
-                if(propertiesArray.length === 1){
-                    let counter = 0;
-                    products[i].productsPropertiesParameters.forEach(productsPropertiesParameter => {
-                        if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId)) {
-                            counter++;
+            if(filters) {
+                label: for (let i = 0; i < products.length; i++) {
+                    if (parametersArray.length > 0) {
+                        if (propertiesArray.length === 1) {
+                            let counter = 0;
+                            products[i].productsPropertiesParameters.forEach(productsPropertiesParameter => {
+                                if (parametersArray.includes(productsPropertiesParameter.propertiesParameter.parameterId)) {
+                                    counter++;
+                                }
+                            });
+                            if (counter) {
+                                result.push(getProductObj(products[i]));
+                            }
+                        } else {
+                            let productParametersList = products[i].productsPropertiesParameters.map(elem => elem.propertiesParameter.parameterId);
+                            for (let j = 0; j < filters.length; j++) {
+                                let counter = 0;
+                                filters[j].parameters.forEach(parameter => {
+                                    if (productParametersList.includes(parameter)) counter++;
+                                });
+                                if (filters[j].parameters.length > 0 && !counter) continue label;
+                            }
+                            result.push(getProductObj(products[i]));
                         }
-                    });
-                    if (counter) {
-                        result.push(getProductObj(products[i]));
-                    }
-                }
-                else{
-                    let productParametersList = products[i].productsPropertiesParameters.map(elem => elem.propertiesParameter.parameterId);
-                    for(let j = 0; j < filters.length; j++ ){
-                        let counter = 0;
-                        filters[j].parameters.forEach(parameter => {
-                            if(productParametersList.includes(parameter))counter++;
-                        });
-                        if( filters[j].parameters.length > 0 && !counter) continue label;
-                    }
-                    result.push(getProductObj(products[i]));
-                }
 
-            }else result.push(getProductObj(products[i]));
-        }
+                    } else result.push(getProductObj(products[i]));
+                }
+            }else{
+                result = products.map(product => {return getProductObj(product)})
+            }
             return result;
     })
         .catch(error => {
