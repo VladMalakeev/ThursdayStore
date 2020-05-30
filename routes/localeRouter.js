@@ -4,8 +4,9 @@ const functions = require('../utils/functions');
 const adminMiddleware = require('../middleware/adminMiddleware');
 const adminOptionalMiddleware = require('../middleware/adminOptionalMiddleware');
 const localeService = require('../services/localeService');
+const userMiddleware = require('../middleware/userMiddleware');
 
-router.get("/", adminOptionalMiddleware, (req, res, next) => {
+router.get("/", adminOptionalMiddleware, userMiddleware, (req, res, next) => {
     localeService.getLocale(req.query.lang, req.admin)
         .then(response => {
             req.data = response;

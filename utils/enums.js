@@ -5,7 +5,9 @@ const currencies = {
     uah:'₴'
 };
 
+const gender = ['male', 'female'];
 module.exports = {
     languages,
-    currencies
+    currencies,
+    gender
 };

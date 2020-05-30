@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const languageService = require('../services/languageService');
 const adminMiddleware = require('../middleware/adminMiddleware');
+const userMiddleware = require('../middleware/userMiddleware');
 
-router.get('/', (req, res, next) => {
+router.get('/', userMiddleware, (req, res, next) => {
     languageService.getAllLanguages()
         .then(languages => {
             req.data = languages;

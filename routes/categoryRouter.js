@@ -5,8 +5,9 @@ const adminOptionalMiddleware = require('../middleware/adminOptionalMiddleware')
 const imageUpload = require('../services/imagesService').categoryUpload;
 const categoryService = require('../services/categoryService');
 const functions = require('../utils/functions');
+const userMiddleware = require('../middleware/userMiddleware');
 
-router.get('/:id?', adminOptionalMiddleware, (req, res, next) => {
+router.get('/:id?', adminOptionalMiddleware, userMiddleware, (req, res, next) => {
     categoryService.getCategories(req.params.id, req.query.lang, req.admin)
         .then(response => {
             req.data = response;

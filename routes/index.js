@@ -11,6 +11,7 @@ const localeRouter = require('./localeRouter');
 const propertiesRouter = require('./propertyRouter');
 const parametersRouter = require('./parametersRouter');
 const filterRouter = require('./filterRouter');
+const userRouter = require('./userRouter');
 
 router.use("/languages", languageRouter);
 router.use("/categories", categoryRouter);
@@ -22,6 +23,7 @@ router.use("/locale", localeRouter);
 router.use("/properties", propertiesRouter);
 router.use("/parameters", parametersRouter);
 router.use("/filter", filterRouter);
+router.use("/user", userRouter);
 
 router.use((req, res, next) => {
     if (!req.route) {
