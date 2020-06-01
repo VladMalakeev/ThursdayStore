@@ -23,7 +23,7 @@ const User = db.define("users",{
         type:Sequelize.STRING
     },
     birthDay:{
-      type:Sequelize.DATEONLY
+      type:Sequelize.STRING
     },
     phone:{
         type:Sequelize.STRING

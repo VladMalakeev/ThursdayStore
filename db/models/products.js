@@ -2,7 +2,7 @@ const Sequelize = require("sequelize");
 const db = require('../index');
 const Strings = require('./strings');
 const SubCategories = require('./subCategories');
-const Currencies = require('./currencies');
+const Prices = require('./prices');
 
 const Products = db.define("products",{
     nameId:{
@@ -29,7 +29,7 @@ const Products = db.define("products",{
     priceId:{
         type:Sequelize.INTEGER,
         references:{
-            model:Currencies,
+            model:Prices,
             key:'id'
         }
     }
@@ -38,9 +38,9 @@ const Products = db.define("products",{
 Strings.hasOne(Products,{foreignKey:'nameId'});
 Strings.hasOne(Products,{foreignKey:'descriptionId'});
 SubCategories.hasMany(Products, {foreignKey:'categoryId', onDelete:'SET NULL'});
-Currencies.hasOne(Products,{foreignKey:'priceId',});
+Prices.hasOne(Products,{foreignKey:'priceId'});
 
-Products.belongsTo(Currencies, {as:'price'});
+Products.belongsTo(Prices, {as:'price',onDelete:'SET NULL'});
 Products.belongsTo(Strings, {as:'name'});
 Products.belongsTo(Strings, {as:'description'});
 Products.belongsTo(SubCategories, {as:'category'});

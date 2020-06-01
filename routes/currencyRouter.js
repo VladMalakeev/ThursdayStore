@@ -1,12 +1,13 @@
-const router = require('express').Router();
+const express = require("express");
+const router = express.Router();
+const currencyModel = require('../db/models/currencies');
 const functions = require('../utils/functions');
-const propertyService = require('../services/propertyService');
 const userMiddleware = require('../middleware/userMiddleware');
 
 router.get('/', userMiddleware, (req, res, next) => {
-    propertyService.getFiltersBySubCategoryId(req.query.catId, req.query.lang, req.query.currency)
-        .then(response => {
-            req.data = response;
+    currencyModel.findAll()
+        .then(currencies => {
+            req.data = currencies;
             next();
         })
         .catch(error => {
@@ -14,7 +15,6 @@ router.get('/', userMiddleware, (req, res, next) => {
             req.data = functions.errorInfo(error);
             next();
         })
-
 });
 
 module.exports = router;

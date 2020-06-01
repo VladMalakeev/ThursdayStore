@@ -2,14 +2,11 @@ const Sequelize = require('sequelize');
 const db = require('../index');
 
 const Currencies = db.define("currencies",{
-    usd:{
-        type:Sequelize.REAL
+    name:{
+        type:Sequelize.STRING
     },
-    rub:{
-        type:Sequelize.REAL
-    },
-    uah:{
-        type:Sequelize.REAL
+    key:{
+        type:Sequelize.STRING
     }
 },{timestamps:false,});
 

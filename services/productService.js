@@ -12,7 +12,7 @@ const productPropertiesParametersModel = require('../db/models/products_properti
 const propertyParametersModel = require('../db/models/properties_parameters');
 const productsImagesModel = require('../db/models/produscts_images');
 const constants = require('../utils/Constants');
-const currencyService = require('../services/currencyService');
+const pricesService = require('../services/pricesService');
 const functions = require('../utils/functions');
 const {Op} = require('sequelize');
 
@@ -27,7 +27,7 @@ const addProduct = async (body, files) => {
             let name = functions.parseString(body.name, 'name');
             let description = functions.parseString(body.description, 'description');
 
-            let price = await currencyService.addCurrency(body.price, transaction);
+            let price = await pricesService.addCurrency(body.price, transaction);
             if (!await subCategoryService.isExistSubCategory(body.catId)) {
                 throw functions.badRequest('Wrong catId parameter or category not exist');
             }
@@ -105,7 +105,7 @@ const setPropertiesForProduct = async (properties, productId) => {
 
 const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency = constants.DefaultCurrency, admin) => {
     if (!await languageService.checkLanguageByKey(lang)) throw functions.badRequest('Wrong language key');
-    await  currencyService.checkCurrency(currency);
+    currency = await  pricesService.checkCurrency(currency);
 
     if (id) {
         if (!parseInt(id)) throw functions.badRequest('Invalid id');
@@ -225,7 +225,7 @@ const editProduct = async (body, files) => {
                     }
 
                     if (body.price) {
-                        let price = await currencyService.editCurrency(body.price,product.priceId, transaction);
+                        let price = await pricesService.editCurrency(body.price,product.priceId, transaction);
                         updateObj.priceId = price.id;
                     }
 
@@ -273,7 +273,7 @@ const deleteProduct = async (id) => {
         .then(async transaction => {
             await stringsService.deleteString(product.nameId, transaction);
             await stringsService.deleteString(product.descriptionId, transaction);
-            await currencyService.deleteCurrency(product.priceId, transaction);
+            await pricesService.deleteCurrency(product.priceId, transaction);
             let imagesList = product.images.map(image => image.name);
             await imageService.deleteGallery(imagesList, 'products', transaction);
             let result = await product.destroy();
@@ -292,7 +292,7 @@ const deleteProduct = async (id) => {
 
 const applyFilter = async (catId, filters, prices, currency = constants.DefaultCurrency, lang = constants.DefaultLanguage) => {
     if(!catId) throw functions.badRequest('CatId is required!');
-    await  currencyService.checkCurrency(currency);
+    currency = await  pricesService.checkCurrency(currency);
 
     let where = {categoryId: catId};
     let propertiesArray = [];

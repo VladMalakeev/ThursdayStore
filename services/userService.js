@@ -19,9 +19,9 @@ const getUserByMacAddress = async (mac) => {
 const editUserByMacAddress = async (obj, mac) => {
     let user = await userModel.findOne({where:{mac}});
     if(!user) throw functions.badRequest('Wrong mac address!');
-    if(obj.gender){
-        if(!enums.gender.includes(obj.gender)) throw functions.badRequest('Wrong gender, mast be male or female');
-    }
+    // if(obj.gender){
+    //     if(!enums.gender.includes(obj.gender)) throw functions.badRequest('Wrong gender, mast be male or female');
+    // }
     return user.update(obj,{where:{mac}, returning:true})
 };
 

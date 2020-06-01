@@ -1,10 +1,11 @@
-const currencyModel = require("../db/models/currencies");
+const pricesModel = require("../db/models/prices");
 const enums = require("../utils/enums");
 const functions = require('../utils/functions');
+const constants = require('../utils/Constants');
 
 const checkCurrency = async (currency) => {
-    if(!Object.keys(enums.currencies).includes(currency)) throw functions.badRequest('Invalid currency name');
-    return true;
+    if(!Object.keys(enums.currencies).includes(currency)) return constants.DefaultCurrency;
+    return currency;
 };
 
 const checkPrice = async (price) => {
@@ -28,16 +29,16 @@ return true;
 
 const addCurrency = async (object, transaction) => {
     await checkPrice(object);
-    return currencyModel.create(object, {returning:true, transaction})
+    return pricesModel.create(object, {returning:true, transaction})
 };
 
 const editCurrency = async (object, id, transaction) => {
     await checkPrice(object);
-    return currencyModel.update(object,{where:{id},returning:true, transaction});
+    return pricesModel.update(object,{where:{id},returning:true, transaction});
 };
 
 const deleteCurrency = async (id, transaction) => {
-    return currencyModel.destroy({where:{id}}, {transaction});
+    return pricesModel.destroy({where:{id}}, {transaction});
 };
 
 module.exports = {

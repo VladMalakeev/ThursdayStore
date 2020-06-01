@@ -7,6 +7,7 @@ const stringsService = require('./stringService');
 const languageService = require('./languageService');
 const parametersService = require('./parametersService');
 const subCategoryService = require('./subCategoryService');
+const pricesService = require('../services/pricesService');
 const functions = require('../utils/functions');
 const db = require('../db/index');
 const constants = require('../utils/Constants');
@@ -134,7 +135,8 @@ const getParameterById = async (id, lang = constants.DefaultLanguage, admin) => 
 };
 
 
-const getFiltersBySubCategoryId = async (catId, lang) => {
+const getFiltersBySubCategoryId = async (catId, lang = constants.DefaultLanguage, currency = constants.DefaultCurrency) => {
+    currency = await  pricesService.checkCurrency(currency);
     let products = await productModel.findAll({
         where: {categoryId: catId},
         include: [
@@ -147,7 +149,8 @@ const getFiltersBySubCategoryId = async (catId, lang) => {
                         {model: parametersModel}
                     ]
                 }]
-            }
+            },
+            {association:'price'}
         ]
     });
 
@@ -157,8 +160,8 @@ const getFiltersBySubCategoryId = async (catId, lang) => {
         max:null
     };
     for (let product of products) {
-        if(product.price < prices.min || prices.min === null)prices.min = product.price;
-        if(product.price > prices.max || prices.min === null)prices.max = product.price;
+        if(product.price[currency] < prices.min || prices.min === null)prices.min = product.price[currency];
+        if(product.price[currency] > prices.max || prices.min === null)prices.max = product.price[currency];
         for (let productsPropertiesParameter of product.productsPropertiesParameters) {
             let propertyExist = false;
             for (let property of properties) {
