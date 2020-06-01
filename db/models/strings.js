@@ -3,13 +3,13 @@ const db = require('../index');
 
 const Strings = db.define("strings",{
     eng:{
-        type:Sequelize.STRING
+        type:Sequelize.TEXT
     },
     rus:{
-        type:Sequelize.STRING
+        type:Sequelize.TEXT
     },
     ukr:{
-        type:Sequelize.STRING
+        type:Sequelize.TEXT
     }
 },{timestamps:false,});
 
