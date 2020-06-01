@@ -80,7 +80,7 @@ router.post('/setProperties', adminMiddleware, (req, res, next) => {
 });
 
 router.post('/filter', userMiddleware, (req, res, next) => {
-    productService.applyFilter(req.body.catId, req.body.filters, req.body.prices, req.body.lang)
+    productService.applyFilter(req.body.catId, req.body.filters, req.body.prices, req.body.currency, req.body.lang)
         .then(async response => {
             req.data = response;
             next();

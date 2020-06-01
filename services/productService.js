@@ -290,25 +290,28 @@ const deleteProduct = async (id) => {
         })
 };
 
-const applyFilter = async (catId, filters, prices, lang = constants.DefaultLanguage) => {
+const applyFilter = async (catId, filters, prices, currency = constants.DefaultCurrency, lang = constants.DefaultLanguage) => {
     if(!catId) throw functions.badRequest('CatId is required!');
 
     let where = {categoryId: catId};
     let propertiesArray = [];
     let parametersArray = [];
-    let productInclude =  [
-        {association: 'name', attributes: {exclude: ['id']}},
-        {association: 'description', attributes: {exclude: ['id']}},
-        {association: 'images'}
-    ];
-
+    let priceWhere = {};
     if(prices){
         let min = parseFloat(prices.min);
         let max = parseFloat(prices.max);
         if(min && max){
-            where.price = {[Op.between]:[min,max]}
+            priceWhere[currency] = {[Op.between]:[min,max]}
         }else throw functions.badRequest('Invalid price format');
     }
+
+    let productInclude =  [
+        {association: 'name', attributes: {exclude: ['id']}},
+        {association: 'description', attributes: {exclude: ['id']}},
+        {association: 'images'},
+        {association:'price',attributes: {exclude: ['id']}, where:priceWhere},
+    ];
+
 
     if(filters) {
         filters.forEach(property => {
@@ -330,7 +333,6 @@ const applyFilter = async (catId, filters, prices, lang = constants.DefaultLangu
 
     return productModel.findAll({where: where, include:productInclude})
         .then(products => {
-            console.log(products)
             let result = [];
             const getProductObj = (product) => {
                return {
@@ -338,7 +340,7 @@ const applyFilter = async (catId, filters, prices, lang = constants.DefaultLangu
                    name: product.name ? product.name[lang] : null,
                    description: product.description ? product.description[lang] : null,
                    images: product.images ? product.images.map(image => image.name) : null,
-                   price: product.price
+                   price: functions.checkIsExistPrice(product.price, currency)
                }
            };
 
