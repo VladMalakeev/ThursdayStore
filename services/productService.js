@@ -292,6 +292,7 @@ const deleteProduct = async (id) => {
 
 const applyFilter = async (catId, filters, prices, currency = constants.DefaultCurrency, lang = constants.DefaultLanguage) => {
     if(!catId) throw functions.badRequest('CatId is required!');
+    await  currencyService.checkCurrency(currency);
 
     let where = {categoryId: catId};
     let propertiesArray = [];
