@@ -43,9 +43,15 @@ const deleteProductsFromCart = async (productId, userId) => {
     return result;
 };
 
+const clearCartByUserId = async (id) => {
+    let result = await cartModel.destroy({where:{userId:id}});
+    return result;
+};
+
 
 module.exports = {
     getProductsFromCart,
     addProductToCart,
-    deleteProductsFromCart
+    deleteProductsFromCart,
+    clearCartByUserId
 };

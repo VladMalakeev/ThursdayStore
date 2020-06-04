@@ -343,8 +343,8 @@ const applyFilter = async (catId, filters, prices, currency = constants.DefaultC
             const getProductObj = async (product) => {
                return {
                    id: product.id,
-                   name: product.name ? product.name[lang] : null,
-                   description: product.description ? product.description[lang] : null,
+                   name: product.name ? functions.checkIsExistString(product.name, lang) : null,
+                   description: product.description ? functions.checkIsExistString(product.description, lang) : null,
                    images: product.images ? product.images.map(image => image.name) : null,
                    price: functions.checkIsExistPrice(product.price, currency),
                    inFavorites: userId ? await functions.checkIsFavorite(product.id, userId): undefined,

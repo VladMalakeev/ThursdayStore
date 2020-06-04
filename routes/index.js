@@ -15,6 +15,7 @@ const userRouter = require('./userRouter');
 const currencyRouter = require('./currencyRouter');
 const favoriteRouter = require('./favoriteRouter');
 const cartRouter = require('./cartRouter');
+const purchaseRouter = require('./purchaseRouter');
 
 router.use("/languages", languageRouter);
 router.use("/categories", categoryRouter);
@@ -30,6 +31,7 @@ router.use("/user", userRouter);
 router.use("/currency", currencyRouter);
 router.use("/favorite", favoriteRouter);
 router.use("/cart", cartRouter);
+router.use("/purchase", purchaseRouter);
 
 router.use((req, res, next) => {
     if (!req.route) {
