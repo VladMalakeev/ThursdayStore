@@ -6,7 +6,6 @@ const propertyService = require('./propertyService');
 const subCategoryService = require('./subCategoryService');
 const imageService = require('./imagesService');
 const productModel = require('../db/models/products');
-const favoriteService = require('../services/favoriteServise');
 const propertiesModel = require('../db/models/properties');
 const parametersModel = require('../db/models/parameters');
 const productPropertiesParametersModel = require('../db/models/products_properties_parameters');
@@ -163,7 +162,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency 
             images: product.images.map(image => image.name),
             price:admin ? product.price: functions.checkIsExistPrice(product.price,currency),
             properties: properties,
-            inFavorites:userId ? await favoriteService.checkIsFavorite(product.id, userId): userId
+            inFavorites:userId ? await functions.checkIsFavorite(product.id, userId): userId,
+            inCart: userId ? await functions.checkInCart(product.id, userId): undefined
         }
 
 
@@ -188,7 +188,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency 
                         description: admin ? product.description : functions.checkIsExistString(product.description, lang),
                         images: product.images.map(image => image.name),
                         price:admin ? product.price: functions.checkIsExistPrice(product.price,currency),
-                        inFavorites:userId ? await favoriteService.checkIsFavorite(product.id, userId): undefined
+                        inFavorites:userId ? await functions.checkIsFavorite(product.id, userId): undefined,
+                        inCart: userId ? await functions.checkInCart(product.id, userId): undefined
                     });
                 }
                  return resultArray;
@@ -346,7 +347,8 @@ const applyFilter = async (catId, filters, prices, currency = constants.DefaultC
                    description: product.description ? product.description[lang] : null,
                    images: product.images ? product.images.map(image => image.name) : null,
                    price: functions.checkIsExistPrice(product.price, currency),
-                   inFavorites: userId ? await favoriteService.checkIsFavorite(product.id, userId): undefined
+                   inFavorites: userId ? await functions.checkIsFavorite(product.id, userId): undefined,
+                   inCart: userId ? await functions.checkInCart(product.id, userId): undefined
                }
            };
 

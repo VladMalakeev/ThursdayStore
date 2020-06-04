@@ -1,5 +1,7 @@
 const defaultLanguage = require('./Constants').DefaultLanguage;
 const defaultCurrency = require('./Constants').DefaultCurrency;
+const cartModel = require('../db/models/cart');
+const favoritesModel = require('../db/models/favorites');
 const enums = require("./enums");
 
 const errorStatus = (error) => {
@@ -56,6 +58,20 @@ const checkIsExistPrice = (object, currency) => {
     else return object[defaultCurrency]+enums.currencies[defaultCurrency];
 };
 
+const checkIsFavorite = async (productId, userId) => {
+    if(!userId) return false;
+    let result = await favoritesModel.findOne({where:{productId:productId, userId:userId}});
+    if(result) return true;
+    return false;
+};
+
+const checkInCart = async (productId, userId) => {
+    if(!userId) return false;
+    let result = await cartModel.findOne({where:{productId:productId, userId:userId}});
+    if(result) return true;
+    return false;
+};
+
 module.exports = {
     parseString,
     errorInfo,
@@ -64,5 +80,7 @@ module.exports = {
     isArray,
     internalError,
     checkIsExistString,
-    checkIsExistPrice
+    checkIsExistPrice,
+    checkIsFavorite,
+    checkInCart
 };
