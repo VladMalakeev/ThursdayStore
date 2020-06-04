@@ -8,6 +8,7 @@ const addToFavorites = async (productId, userId) => {
 };
 
 const getFavorites = async (userId, lang = constants.DefaultLanguage, currency = constants.DefaultCurrency) => {
+    if(!userId) throw functions.badRequest('wrong user id');
     return favoritesModel.findAll({
         where:userId,
         include:[
@@ -37,8 +38,16 @@ const deleteFromFavorites = async (productId, userId) => {
     return result;
 };
 
+const checkIsFavorite = async (productId, userId) => {
+    if(!userId) return false;
+      let result = await favoritesModel.findOne({where:{productId:productId, userId:userId}});
+      if(result) return true;
+      return false;
+};
+
 module.exports = {
     addToFavorites,
     getFavorites,
-    deleteFromFavorites
+    deleteFromFavorites,
+    checkIsFavorite
 };

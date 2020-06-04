@@ -6,6 +6,7 @@ const propertyService = require('./propertyService');
 const subCategoryService = require('./subCategoryService');
 const imageService = require('./imagesService');
 const productModel = require('../db/models/products');
+const favoriteService = require('../services/favoriteServise');
 const propertiesModel = require('../db/models/properties');
 const parametersModel = require('../db/models/parameters');
 const productPropertiesParametersModel = require('../db/models/products_properties_parameters');
@@ -15,7 +16,6 @@ const constants = require('../utils/Constants');
 const pricesService = require('../services/pricesService');
 const functions = require('../utils/functions');
 const {Op} = require('sequelize');
-
 
 
 const addProduct = async (body, files) => {
@@ -103,7 +103,7 @@ const setPropertiesForProduct = async (properties, productId) => {
         })
 };
 
-const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency = constants.DefaultCurrency, admin) => {
+const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency = constants.DefaultCurrency, admin, userId) => {
     if (!await languageService.checkLanguageByKey(lang)) throw functions.badRequest('Wrong language key');
     currency = await  pricesService.checkCurrency(currency);
 
@@ -162,7 +162,8 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency 
             description: admin ? product.description : functions.checkIsExistString(product.description, lang),
             images: product.images.map(image => image.name),
             price:admin ? product.price: functions.checkIsExistPrice(product.price,currency),
-            properties: properties
+            properties: properties,
+            inFavorites:userId ? await favoriteService.checkIsFavorite(product.id, userId): userId
         }
 
 
@@ -178,16 +179,19 @@ const getProduct = async (id, catId, lang = constants.DefaultLanguage, currency 
                 {association: 'images'}
             ]
         })
-            .then(products => {
-                return products.map(product => {
-                    return {
+            .then(async products => {
+                let resultArray = [];
+                 for(let product of products) {
+                    resultArray.push({
                         id: product.id,
                         name: admin ? product.name : functions.checkIsExistString(product.name, lang),
                         description: admin ? product.description : functions.checkIsExistString(product.description, lang),
                         images: product.images.map(image => image.name),
                         price:admin ? product.price: functions.checkIsExistPrice(product.price,currency),
-                    }
-                })
+                        inFavorites:userId ? await favoriteService.checkIsFavorite(product.id, userId): undefined
+                    });
+                }
+                 return resultArray;
             })
             .catch(error => {
                 console.log(error);
@@ -290,7 +294,7 @@ const deleteProduct = async (id) => {
         })
 };
 
-const applyFilter = async (catId, filters, prices, currency = constants.DefaultCurrency, lang = constants.DefaultLanguage) => {
+const applyFilter = async (catId, filters, prices, currency = constants.DefaultCurrency, lang = constants.DefaultLanguage, userId) => {
     if(!catId) throw functions.badRequest('CatId is required!');
     currency = await  pricesService.checkCurrency(currency);
 
@@ -333,15 +337,16 @@ const applyFilter = async (catId, filters, prices, currency = constants.DefaultC
     }
 
     return productModel.findAll({where: where, include:productInclude})
-        .then(products => {
+        .then(async products => {
             let result = [];
-            const getProductObj = (product) => {
+            const getProductObj = async (product) => {
                return {
                    id: product.id,
                    name: product.name ? product.name[lang] : null,
                    description: product.description ? product.description[lang] : null,
                    images: product.images ? product.images.map(image => image.name) : null,
-                   price: functions.checkIsExistPrice(product.price, currency)
+                   price: functions.checkIsExistPrice(product.price, currency),
+                   inFavorites: userId ? await favoriteService.checkIsFavorite(product.id, userId): undefined
                }
            };
 
@@ -356,7 +361,7 @@ const applyFilter = async (catId, filters, prices, currency = constants.DefaultC
                                 }
                             });
                             if (counter) {
-                                result.push(getProductObj(products[i]));
+                                result.push(await getProductObj(products[i]));
                             }
                         } else {
                             let productParametersList = products[i].productsPropertiesParameters.map(elem => elem.propertiesParameter.parameterId);
@@ -367,13 +372,13 @@ const applyFilter = async (catId, filters, prices, currency = constants.DefaultC
                                 });
                                 if (filters[j].parameters.length > 0 && !counter) continue label;
                             }
-                            result.push(getProductObj(products[i]));
+                            result.push(await getProductObj(products[i]));
                         }
 
-                    } else result.push(getProductObj(products[i]));
+                    } else result.push(await getProductObj(products[i]));
                 }
             }else{
-                result = products.map(product => {return getProductObj(product)})
+                 for(let product of products){result.push(await getProductObj(product))}
             }
             return result;
     })
