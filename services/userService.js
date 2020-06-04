@@ -7,7 +7,7 @@ const checkUserByMacAddress = async (mac) => {
 };
 
 const createUserByMacAddress = async (mac) => {
-    return userModel.create({mac})
+    return userModel.create({mac}, {returning:true});
 };
 
 const getUserByMacAddress = async (mac) => {
